@@ -294,7 +294,7 @@ function handleUpdateCredits(data) {
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] === data.userId) {
        let current = rows[i][7];
-       let newAmount = data.action === 'add' ? current + data.amount : current - data.amount;
+       let newAmount = data.creditAction === 'add' ? current + data.amount : current - data.amount;
        if (newAmount < 0) newAmount = 0;
        
        sheet.getRange(i + 1, 8).setValue(newAmount); // Credits col 8

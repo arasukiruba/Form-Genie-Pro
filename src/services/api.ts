@@ -124,8 +124,8 @@ export const adminApi = {
     rejectUser: (userId: string) =>
         apiRequest('rejectUser', { userId }),
 
-    updateCredits: (userId: string, amount: number, action: 'add' | 'reduce') =>
-        apiRequest('updateCredits', { userId, amount, action }),
+    updateCredits: (userId: string, amount: number, creditAction: 'add' | 'reduce') =>
+        apiRequest('updateCredits', { userId, amount, creditAction }),
 
     getScreenshot: (userId: string) => {
         // We can just get it from the user list if we sync it?
@@ -161,7 +161,7 @@ export const creditsApi = {
     deduct: (count: number = 1) => {
         const user = getStoredUser();
         if (!user) return Promise.reject('User not found');
-        return apiRequest('updateCredits', { userId: user.id, amount: count, action: 'reduce' });
+        return apiRequest('updateCredits', { userId: user.id, amount: count, creditAction: 'reduce' });
     },
     getLogs: () => Promise.resolve({ logs: [] }), // Placeholder
 };
