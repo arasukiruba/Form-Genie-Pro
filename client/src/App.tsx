@@ -29,7 +29,7 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Form-Genie-Pro">
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
