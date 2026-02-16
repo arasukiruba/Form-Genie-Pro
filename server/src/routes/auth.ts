@@ -195,6 +195,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
             .single();
 
         if (error || !user) {
+            console.log(`[Login Failed] User not found or DB error. Username: ${username}, Error:`, error);
             res.status(401).json({ error: 'Invalid username or password.' });
             return;
         }
@@ -202,6 +203,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
+            console.log(`[Login Failed] Password mismatch for user: ${username}`);
             res.status(401).json({ error: 'Invalid username or password.' });
             return;
         }
