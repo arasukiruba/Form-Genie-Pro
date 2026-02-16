@@ -329,6 +329,20 @@ const UserManagement: React.FC = () => {
         }
     };
 
+    const handleDelete = async (userId: string) => {
+        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        setActionLoading(userId);
+        try {
+            await adminApi.deleteUser(userId);
+            setMessage({ type: 'success', text: 'User deleted successfully' });
+            fetchUsers();
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.error || 'Failed to delete user' });
+        } finally {
+            setActionLoading('');
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -472,6 +486,12 @@ const UserManagement: React.FC = () => {
                                                             {user.status === 'disabled' ? 'Enable' : 'Disable'}
                                                         </button>
                                                     )}
+                                                    {user.role !== 'admin' && (
+                                                        <button onClick={() => handleDelete(user.id)} disabled={actionLoading === user.id}
+                                                            style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', fontSize: '11px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <Trash2 style={{ width: 12, height: 12 }} /> Delete
+                                                        </button>
+                                                    )}
 
                                                 </div>
                                             </td>
@@ -482,7 +502,8 @@ const UserManagement: React.FC = () => {
                         </table>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Screenshot Modal */}
             <AnimatePresence>
@@ -541,7 +562,7 @@ const UserManagement: React.FC = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };
 

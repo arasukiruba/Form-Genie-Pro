@@ -95,6 +95,9 @@ export const adminApi = {
 
     toggleUserStatus: (id: string, status: 'approved' | 'disabled') =>
         apiRequest(`/admin/users/${id}/status`, { method: 'PATCH', body: { status } }),
+
+    deleteUser: (id: string) =>
+        apiRequest(`/admin/users/${id}`, { method: 'DELETE' }),
 };
 
 // ─── Credits API ──────────────────────────────────
