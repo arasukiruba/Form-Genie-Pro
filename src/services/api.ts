@@ -154,7 +154,10 @@ export const adminApi = {
 
 // ─── Credits API ──────────────────────────────────
 export const creditsApi = {
-    getBalance: () => Promise.resolve({ balance: 0 }), // Placeholder
+    getBalance: async () => {
+        const data = await authApi.getProfile();
+        return { balance: data.user.credits, credits: data.user.credits };
+    },
     deduct: (count: number = 1) => Promise.resolve({}), // Placeholder
     getLogs: () => Promise.resolve({ logs: [] }), // Placeholder
 };

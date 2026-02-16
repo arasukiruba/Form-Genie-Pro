@@ -111,14 +111,8 @@ const AutomateForm: React.FC = () => {
 
         // Credit check before importing (for users)
         if (user?.role !== 'admin') {
-            try {
-                const balanceData = await creditsApi.getBalance();
-                if (balanceData.balance <= 0) {
-                    setStatus({ status: 'error', message: 'Insufficient credits. Please purchase more to continue.' });
-                    return;
-                }
-            } catch {
-                setStatus({ status: 'error', message: 'Failed to verify credits.' });
+            if ((user?.credits || 0) <= 0) {
+                setStatus({ status: 'error', message: 'Insufficient credits. Please purchase more to continue.' });
                 return;
             }
         }
