@@ -74,6 +74,18 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
     setLogs([]);
     setProgress(0);
     let successCount = 0;
+    let pendingDeductions = 0;
+
+    const performDeduction = async (count: number) => {
+      if (user?.role === 'admin') return;
+      try {
+        const result = await creditsApi.deduct(count);
+        setLogs(prev => [{ id: prev.length + 1, status: 'success', message: `💳 ${count} credits deducted incrementally. Remaining: ${result.credits}`, time: new Date().toLocaleTimeString() }, ...prev]);
+        refreshCredits();
+      } catch (err: any) {
+        setLogs(prev => [{ id: prev.length + 1, status: 'error', message: `Incremental credit deduction failed: ${err.error || 'Unknown error'}`, time: new Date().toLocaleTimeString() }, ...prev]);
+      }
+    };
 
     for (let i = 1; i <= targetCount; i++) {
       // Check stop signal before starting iteration
@@ -94,7 +106,14 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
         });
 
         successCount++;
+        pendingDeductions++;
         setLogs(prev => [{ id: i, status: 'success', message: "Submitted successfully", time: new Date().toLocaleTimeString() }, ...prev]);
+
+        // Deduct every 5 successes
+        if (pendingDeductions === 5) {
+          await performDeduction(5);
+          pendingDeductions = 0;
+        }
       } catch (error) {
         setLogs(prev => [{ id: i, status: 'error', message: "Request failed", time: new Date().toLocaleTimeString() }, ...prev]);
       }
@@ -107,15 +126,9 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
       }
     }
 
-    // Deduct credits for successful submissions (skip for admin)
-    if (successCount > 0 && user?.role !== 'admin') {
-      try {
-        const result = await creditsApi.deduct(successCount);
-        setLogs(prev => [{ id: prev.length + 1, status: 'success', message: `💳 ${successCount} credits deducted. Remaining: ${result.credits}`, time: new Date().toLocaleTimeString() }, ...prev]);
-        refreshCredits();
-      } catch (err: any) {
-        setLogs(prev => [{ id: prev.length + 1, status: 'error', message: `Credit deduction failed: ${err.error || 'Unknown error'}`, time: new Date().toLocaleTimeString() }, ...prev]);
-      }
+    // Deduct remaining successes
+    if (pendingDeductions > 0) {
+      await performDeduction(pendingDeductions);
     }
 
     setIsSubmitting(false);

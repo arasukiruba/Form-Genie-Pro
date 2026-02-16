@@ -332,6 +332,20 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
             }
         });
 
+        let successCount = 0;
+        let pendingDeductions = 0;
+
+        const performDeduction = async (count: number) => {
+            if (user?.role === 'admin') return;
+            try {
+                const result = await creditsApi.deduct(count);
+                setLogs(prev => [{ id: prev.length + 1, status: 'success', message: `💳 ${count} credits deducted incrementally. Remaining: ${result.credits}`, time: new Date().toLocaleTimeString() }, ...prev]);
+                refreshCredits();
+            } catch (err: any) {
+                setLogs(prev => [{ id: prev.length + 1, status: 'error', message: `Incremental credit deduction failed: ${err.error || 'Unknown error'}`, time: new Date().toLocaleTimeString() }, ...prev]);
+            }
+        };
+
         // --- PHASE 2: EXECUTION LOOP ---
         for (let i = 0; i < targetCount; i++) {
             if (stopRequested.current) {
@@ -389,6 +403,12 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
 
                 setLogs(prev => [{ id: i + 1, status: 'success', message: "Submitted", time: new Date().toLocaleTimeString() }, ...prev]);
                 successCount++;
+                pendingDeductions++;
+
+                if (pendingDeductions === 5) {
+                    await performDeduction(5);
+                    pendingDeductions = 0;
+                }
             } catch (e) {
                 setLogs(prev => [{ id: i + 1, status: 'error', message: "Failed", time: new Date().toLocaleTimeString() }, ...prev]);
             }
@@ -400,15 +420,8 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
             }
         }
 
-        // Deduct credits for successful submissions (skip for admin)
-        if (successCount > 0 && user?.role !== 'admin') {
-            try {
-                const result = await creditsApi.deduct(successCount);
-                setLogs(prev => [{ id: prev.length + 1, status: 'success', message: `💳 ${successCount} credits deducted. Remaining: ${result.credits}`, time: new Date().toLocaleTimeString() }, ...prev]);
-                refreshCredits();
-            } catch (err: any) {
-                setLogs(prev => [{ id: prev.length + 1, status: 'error', message: `Credit deduction failed: ${err.error || 'Unknown error'}`, time: new Date().toLocaleTimeString() }, ...prev]);
-            }
+        if (pendingDeductions > 0) {
+            await performDeduction(pendingDeductions);
         }
 
         setIsRunning(false);
