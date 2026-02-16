@@ -158,7 +158,11 @@ export const creditsApi = {
         const data = await authApi.getProfile();
         return { balance: data.user.credits, credits: data.user.credits };
     },
-    deduct: (count: number = 1) => Promise.resolve({}), // Placeholder
+    deduct: (count: number = 1) => {
+        const user = getStoredUser();
+        if (!user) return Promise.reject('User not found');
+        return apiRequest('updateCredits', { userId: user.id, amount: count, action: 'reduce' });
+    },
     getLogs: () => Promise.resolve({ logs: [] }), // Placeholder
 };
 
