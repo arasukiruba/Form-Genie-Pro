@@ -1,9 +1,9 @@
 // ─── CONFIGURATION ──────────────────────────────────
 // 1. Create a folder in Google Drive for screenshots.
 // 2. Open that folder, copy the ID from the URL (after /folders/) and paste it below.
-const DRIVE_FOLDER_ID = 'PASTE_YOUR_DRIVE_FOLDER_ID_HERE';
+const DRIVE_FOLDER_ID = '1Sp-G7ySxEhC0_TJqSEn7VomRVBBuCyWh';
 // 3. Enter the email address where you want to receive registration alerts.
-const ADMIN_EMAIL = 'PASTE_YOUR_ADMIN_EMAIL_HERE';
+const ADMIN_EMAIL = 'arasukirubanandhan2430035@ssn.edu.in';
 
 // Sheet Names
 const SHEET_USERS = 'Users';
@@ -135,7 +135,7 @@ function handleRegister(data) {
         `
       });
     } catch (e) {
-      // Ignore email errors to not block registration
+      // Ignore
     }
   }
 
@@ -238,10 +238,10 @@ function handleUserAction(data, action) {
     if (rows[i][0] === data.userId) { // userId passed in body
       sheet.getRange(i + 1, 9).setValue(newStatus); // Status is col 9
       
-      const userEmail = rows[i][3]; // Email is col 3 (index 3, so D column)
-      const userName = rows[i][1];
-
       // 📧 SEND EMAIL TO USER IF APPROVED
+      const userEmail = rows[i][3]; // Email is col 3
+      const userName = rows[i][1];
+      
       if (action === 'approve' && userEmail) {
         try {
           MailApp.sendEmail({
@@ -251,7 +251,6 @@ function handleUserAction(data, action) {
               <h3>Welcome to Form Genie Pro!</h3>
               <p>Hi ${userName},</p>
               <p>Your account has been approved by the admin. You can now login and start using the platform.</p>
-              <p><a href="YOUR_FRONTEND_URL_HERE">Login Here</a></p>
             `
           });
         } catch (e) {
