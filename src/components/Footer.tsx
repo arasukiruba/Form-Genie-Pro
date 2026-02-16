@@ -9,12 +9,12 @@ export const Footer: React.FC = () => {
             transition={{ delay: 0.5 }}
             style={{
                 textAlign: 'center',
-                padding: '12px',
+                padding: '24px 12px 14px',
                 fontSize: '11px',
                 color: '#9e97b0',
-                fontWeight: 500,
+                fontWeight: 600,
                 width: '100%',
-                background: 'transparent',
+                background: 'linear-gradient(to top, rgba(248, 247, 252, 1) 0%, rgba(248, 247, 252, 0.8) 50%, rgba(248, 247, 252, 0) 100%)',
                 position: 'fixed',
                 bottom: 0,
                 left: 0,
