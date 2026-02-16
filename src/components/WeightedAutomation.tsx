@@ -14,7 +14,7 @@ interface WeightedAutomationProps {
 
 interface LogEntry {
     id: number;
-    status: 'success' | 'error' | 'stopped';
+    status: 'success' | 'error' | 'info' | 'stopped';
     message: string;
     time: string;
 }
@@ -227,6 +227,14 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
     const [progress, setProgress] = useState(0);
 
     const stopRequested = useRef(false);
+    const logCounter = useRef(0);
+
+    const addLog = (status: 'success' | 'error' | 'info' | 'stopped', message: string) => {
+        logCounter.current++;
+        const id = logCounter.current;
+        setLogs(prev => [{ id, status, message, time: new Date().toLocaleTimeString() }, ...prev]);
+        return id;
+    };
 
     // Helper: Generate a single grid response (Random per submission)
     const generateGridResponse = (item: FormItem) => {
@@ -256,8 +264,8 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
     };
 
     const handleStart = async () => {
-        if (!form.actionUrl) {
-            alert("Action URL missing.");
+        if (isRunning || !form.actionUrl) {
+            if (!form.actionUrl) alert("Action URL missing.");
             return;
         }
 
@@ -265,6 +273,10 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
         stopRequested.current = false;
         setLogs([]);
         setProgress(0);
+        logCounter.current = 0;
+
+        addLog('info', "Initializing automation engine...");
+        await new Promise(resolve => setTimeout(resolve, 800)); // Cold start delay
         let successCount = 0;
         let pendingDeductions = 0;
 
@@ -339,10 +351,10 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
             if (user?.role === 'admin') return;
             try {
                 const result = await creditsApi.deduct(count);
-                setLogs(prev => [{ id: prev.length + 1, status: 'success', message: `💳 ${count} credits deducted incrementally. Remaining: ${result.credits}`, time: new Date().toLocaleTimeString() }, ...prev]);
+                addLog('success', `💳 ${count} credits deducted incrementally. Balance: ${result.credits}`);
                 refreshCredits();
             } catch (err: any) {
-                setLogs(prev => [{ id: prev.length + 1, status: 'error', message: `Incremental credit deduction failed: ${err.error || 'Unknown error'}`, time: new Date().toLocaleTimeString() }, ...prev]);
+                addLog('error', `Incremental credit deduction failed: ${err.error || 'Unknown error'}`);
             }
         };
 
@@ -394,6 +406,7 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
                     }
                 });
 
+                // Wait for the specific submission to clear
                 await fetch(form.actionUrl, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -401,7 +414,10 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
                     body: formData
                 });
 
-                setLogs(prev => [{ id: i + 1, status: 'success', message: "Submitted", time: new Date().toLocaleTimeString() }, ...prev]);
+                // Small artificial delay to confirm submission transit
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                addLog('success', `Submission #${i + 1} finalized successfully`);
                 successCount++;
                 pendingDeductions++;
 
@@ -410,7 +426,7 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
                     pendingDeductions = 0;
                 }
             } catch (e) {
-                setLogs(prev => [{ id: i + 1, status: 'error', message: "Failed", time: new Date().toLocaleTimeString() }, ...prev]);
+                addLog('error', `Submission #${i + 1} failed to reach server`);
             }
 
             setProgress(i + 1);
@@ -424,6 +440,7 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
             await performDeduction(pendingDeductions);
         }
 
+        await new Promise(resolve => setTimeout(resolve, 500)); // Buffer before finishing
         setIsRunning(false);
     };
 

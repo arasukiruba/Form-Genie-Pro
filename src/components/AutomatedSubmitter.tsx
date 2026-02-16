@@ -12,7 +12,7 @@ interface AutomatedSubmitterProps {
 
 interface LogEntry {
   id: number;
-  status: 'success' | 'error' | 'stopped';
+  status: 'success' | 'error' | 'info' | 'stopped';
   message: string;
   time: string;
 }
@@ -26,6 +26,14 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
 
   // Ref to track if we should abort the loop immediately
   const stopRequested = useRef(false);
+  const logCounter = useRef(0);
+
+  const addLog = (status: 'success' | 'error' | 'info' | 'stopped', message: string) => {
+    logCounter.current++;
+    const id = logCounter.current;
+    setLogs(prev => [{ id, status, message, time: new Date().toLocaleTimeString() }, ...prev]);
+    return id;
+  };
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -63,7 +71,7 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
   };
 
   const handleStart = async () => {
-    if (!validateForm()) return;
+    if (isSubmitting || !validateForm()) return;
     if (!form.actionUrl) {
       alert("Error: Cannot submit. Form action URL missing.");
       return;
@@ -73,6 +81,10 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
     stopRequested.current = false;
     setLogs([]);
     setProgress(0);
+    logCounter.current = 0;
+
+    addLog('info', "Starting automated submission sequence...");
+    await delay(800);
     let successCount = 0;
     let pendingDeductions = 0;
 
@@ -80,10 +92,10 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
       if (user?.role === 'admin') return;
       try {
         const result = await creditsApi.deduct(count);
-        setLogs(prev => [{ id: prev.length + 1, status: 'success', message: `💳 ${count} credits deducted incrementally. Remaining: ${result.credits}`, time: new Date().toLocaleTimeString() }, ...prev]);
+        addLog('success', `💳 ${count} credits deducted incrementally. Balance: ${result.credits}`);
         refreshCredits();
       } catch (err: any) {
-        setLogs(prev => [{ id: prev.length + 1, status: 'error', message: `Incremental credit deduction failed: ${err.error || 'Unknown error'}`, time: new Date().toLocaleTimeString() }, ...prev]);
+        addLog('error', `Incremental credit deduction failed: ${err.error || 'Unknown error'}`);
       }
     };
 
@@ -105,9 +117,12 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
           body: body
         });
 
+        // Small artificial delay to confirm submission transit
+        await delay(500);
+
+        addLog('success', `Submission #${i} finalized successfully`);
         successCount++;
         pendingDeductions++;
-        setLogs(prev => [{ id: i, status: 'success', message: "Submitted successfully", time: new Date().toLocaleTimeString() }, ...prev]);
 
         // Deduct every 5 successes
         if (pendingDeductions === 5) {
@@ -115,7 +130,7 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
           pendingDeductions = 0;
         }
       } catch (error) {
-        setLogs(prev => [{ id: i, status: 'error', message: "Request failed", time: new Date().toLocaleTimeString() }, ...prev]);
+        addLog('error', `Submission #${i} failed: Network error`);
       }
 
       setProgress(i);
@@ -131,6 +146,7 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
       await performDeduction(pendingDeductions);
     }
 
+    await delay(500); // Final buffer
     setIsSubmitting(false);
   };
 
