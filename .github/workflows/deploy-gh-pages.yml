@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_URL: ""  # TODO: Set to your Render backend URL, e.g. https://form-genie-server.onrender.com
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Add SPA redirect script to index.html
         run: |
