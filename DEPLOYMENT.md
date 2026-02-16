@@ -1,7 +1,7 @@
 
-# 🚀 Deployment Guide — Form Genie Pro
+# 🚀 Deployment Guide — Form Genie Pro (Final)
 
-This guide outlines how to deploy **Form Genie Pro** using the industry-standard stack:
+This guide outlines how to deploy **Form Genie Pro** using the standard stack:
 - **Frontend**: Vercel (Fast, Global CDN)
 - **Backend**: Render (Reliable Node.js hosting)
 
@@ -14,16 +14,7 @@ The project is configured to ignore `.env` files. You will set secrets manually 
 
 ## 🐙 2. GitHub Repository
 
-1.  Create a **Private** repository named `Form-Genie-Pro` on [GitHub](https://github.com/new).
-2.  Push your code:
-    ```bash
-    git init
-    git add .
-    git commit -m "Initial commit of Form Genie Pro"
-    git branch -M main
-    git remote add origin https://github.com/YOUR_USERNAME/Form-Genie-Pro.git
-    git push -u origin main
-    ```
+Your code is already pushed to: **[https://github.com/arasukiruba/Form-Genie-Pro](https://github.com/arasukiruba/Form-Genie-Pro)**.
 
 ---
 
