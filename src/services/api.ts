@@ -70,7 +70,8 @@ async function apiRequest(action: string, data: any = {}) {
         const response = await fetch(API_BASE, {
             method: 'POST',
             body: JSON.stringify(payload),
-            // headers: { 'Content-Type': 'text/plain' }, // Often safer for GAS
+            headers: { 'Content-Type': 'text/plain' },
+            redirect: 'follow'
         });
 
         const result = await response.json();
