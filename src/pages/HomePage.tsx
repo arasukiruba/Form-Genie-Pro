@@ -6,7 +6,7 @@ import { WhatsAppButton } from '../components/WhatsAppButton';
 
 const pageVariants = {
     initial: { opacity: 0, y: 30 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as any } },
 };
 
 export const HomePage: React.FC = () => {
@@ -135,16 +135,6 @@ export const HomePage: React.FC = () => {
                     Register
                 </button>
             </motion.div>
-
-            {/* Footer */}
-            <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                style={{ position: 'absolute', bottom: '24px', fontSize: '12px', color: '#9e97b0', fontWeight: 500 }}
-            >
-                Designed by Arasukirubanandhan <span style={{ color: '#f87171' }}>❤️</span>
-            </motion.p>
 
             <WhatsAppButton />
         </motion.div>

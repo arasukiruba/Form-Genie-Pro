@@ -107,6 +107,7 @@ function handleRegister(data) {
   }
 
   sheet.appendRow([
+    id, data.name, data.username, data.email, data.password, 'user', 
     data.plan, credits, 'pending', data.contact_number || data.contact, timestamp
   ]);
 
