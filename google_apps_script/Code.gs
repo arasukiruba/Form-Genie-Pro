@@ -463,7 +463,7 @@ function uploadToDrive(filename, base64Data, mimeType) {
     const file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     // Return direct image link format for <img> tags
-    return `https://drive.google.com/uc?export=download&id=${file.getId()}`; 
+    return `https://lh3.googleusercontent.com/d/${file.getId()}`; 
   } catch (e) {
     return '';
   }

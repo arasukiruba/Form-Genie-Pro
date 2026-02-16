@@ -20,7 +20,7 @@ export const RegisterPage: React.FC = () => {
     });
     const [screenshot, setScreenshot] = useState<File | null>(null);
     const [screenshotPreview, setScreenshotPreview] = useState<string>('');
-    const [qrUrl] = useState('https://drive.google.com/uc?export=download&id=1wqOWOeqQ2P3M8n8w_r1IPuDeyXtVLMk7');
+    const [qrUrl] = useState('https://lh3.googleusercontent.com/d/1wqOWOeqQ2P3M8n8w_r1IPuDeyXtVLMk7');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
