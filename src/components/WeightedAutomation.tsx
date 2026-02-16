@@ -266,6 +266,7 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
         setLogs([]);
         setProgress(0);
         let successCount = 0;
+        let pendingDeductions = 0;
 
         // --- PHASE 1: PRE-CALCULATE BATCH SCHEDULE ---
         const batchSchedule: Record<string, any[]> = {};
@@ -332,8 +333,7 @@ export const WeightedAutomation: React.FC<WeightedAutomationProps> = ({ form, on
             }
         });
 
-        let successCount = 0;
-        let pendingDeductions = 0;
+
 
         const performDeduction = async (count: number) => {
             if (user?.role === 'admin') return;
