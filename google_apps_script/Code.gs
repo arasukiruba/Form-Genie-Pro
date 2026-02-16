@@ -121,18 +121,23 @@ function handleRegister(data) {
   // 📧 SEND EMAIL TO ADMIN
   if (ADMIN_EMAIL && ADMIN_EMAIL !== 'PASTE_YOUR_ADMIN_EMAIL_HERE') {
     try {
+      const emailBody = `
+        <p>A new user has requested access to Form Genie.</p>
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin: 20px 0;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Name</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">${data.name}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Email</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">${data.email}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Plan</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-transform: capitalize;">${data.plan}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Transaction ID</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-family: monospace;">${data.transactionId}</td></tr>
+          </table>
+        </div>
+        <p>Please check the Admin Panel to approve or reject this request.</p>
+      `;
+
       MailApp.sendEmail({
         to: ADMIN_EMAIL,
-        subject: 'New User Registration: ' + data.name,
-        htmlBody: `
-          <h3>New User Registered</h3>
-          <p><strong>Name:</strong> ${data.name}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Plan:</strong> ${data.plan}</p>
-          <p><strong>Transaction ID:</strong> ${data.transactionId}</p>
-          <p>Please check the Admin Panel to approve/reject this user.</p>
-          ${screenshotUrl ? `<p><a href="${screenshotUrl}">View Payment Screenshot</a></p>` : ''}
-        `
+        subject: '🆕 New User Registration using Form Genie: ' + data.name,
+        htmlBody: getEmailTemplate('New User Registration', emailBody, screenshotUrl, 'View Payment Screenshot')
       });
     } catch (e) {
       // Ignore
@@ -244,14 +249,17 @@ function handleUserAction(data, action) {
       
       if (action === 'approve' && userEmail) {
         try {
+          const emailBody = `
+            <p>Hi ${userName},</p>
+            <p>Great news! Your account has been successfully <strong>approved</strong>.</p>
+            <p>You now have full access to Form Genie Pro. You can login immediately and start automating your Google Forms.</p>
+            <p>If you have any questions, feel free to reply to this email.</p>
+          `;
+
           MailApp.sendEmail({
             to: userEmail,
-            subject: 'Account Approved - Form Genie Pro',
-            htmlBody: `
-              <h3>Welcome to Form Genie Pro!</h3>
-              <p>Hi ${userName},</p>
-              <p>Your account has been approved by the admin. You can now login and start using the platform.</p>
-            `
+            subject: '🎉 Account Approved - Form Genie Pro',
+            htmlBody: getEmailTemplate('Welcome to Form Genie!', emailBody, 'https://arasukiruba.github.io/Form-Genie-Pro/', 'Go to Dashboard')
           });
         } catch (e) {
           // Ignore
@@ -392,6 +400,61 @@ function handleAdminStats(data) {
 }
 
 // ─── UTILS ──────────────────────────────────────────
+
+// ─── EMAIL TEMPLATE ─────────────────────────────────
+
+function getEmailTemplate(title, body, actionLink, actionText) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${title}</title>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 40px; margin-bottom: 40px;">
+        
+        <!-- Header -->
+        <tr>
+          <td align="center" style="padding: 40px 0 30px 0; background: linear-gradient(135deg, #4285F4, #5a9cf5);">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Form Genie Genie</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">Smart Automation Platform</p>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding: 40px 40px 20px 40px;">
+            <h2 style="color: #1e1b2e; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">${title}</h2>
+            <div style="color: #4b5563; font-size: 16px; line-height: 1.6;">
+              ${body}
+            </div>
+            
+            ${actionLink ? `
+              <div style="margin-top: 30px; text-align: center;">
+                <a href="${actionLink}" style="background: linear-gradient(135deg, #4285F4, #5a9cf5); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(66, 133, 244, 0.2); transition: transform 0.2s;">
+                  ${actionText || 'View Dashboard'}
+                </a>
+              </div>
+            ` : ''}
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+              &copy; ${new Date().getFullYear()} Form Genie Pro. All rights reserved.<br>
+              This is an automated message. Please do not reply directly.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+}
 
 function uploadToDrive(filename, base64Data, mimeType) {
   try {

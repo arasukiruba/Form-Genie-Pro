@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { useAuth } from '../contexts/AuthContext';
 import { ParsedForm, GenerationState } from '../types';
@@ -82,7 +82,7 @@ const DashboardOverview: React.FC = () => {
                 <p style={{ fontSize: '14px', opacity: 0.85, margin: '0 0 20px' }}>
                     Navigate to "Automate Form" in the sidebar to import a Google Form and start automating submissions.
                 </p>
-                <a href="/dashboard/automate" style={{
+                <Link to="/dashboard/automate" style={{
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     padding: '10px 20px', borderRadius: '10px',
                     background: 'rgba(255,255,255,0.2)', color: 'white',
@@ -90,7 +90,7 @@ const DashboardOverview: React.FC = () => {
                     backdropFilter: 'blur(4px)', transition: 'all 0.2s',
                 }}>
                     <Zap style={{ width: 16, height: 16 }} /> Start Automation
-                </a>
+                </Link>
             </div>
         </div>
     );
@@ -113,7 +113,7 @@ const AutomateForm: React.FC = () => {
         if (user?.role !== 'admin') {
             try {
                 const balanceData = await creditsApi.getBalance();
-                if (balanceData.credits <= 0) {
+                if (balanceData.balance <= 0) {
                     setStatus({ status: 'error', message: 'Insufficient credits. Please purchase more to continue.' });
                     return;
                 }
