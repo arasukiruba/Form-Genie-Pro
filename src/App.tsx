@@ -1,5 +1,4 @@
-import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
@@ -12,24 +11,24 @@ import { Footer } from './components/Footer';
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const showFooter = ['/', '/login'].includes(location.pathname);
 
   return (
     <>
-      <div style={{ paddingBottom: '40px' }}>
-        <Routes>
-          <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <HomePage />} />
-          <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <LoginPage />} />
-          <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
-          <Route path="/dashboard/*" element={
-            <ProtectedRoute><DashboardPage /></ProtectedRoute>
-          } />
-          <Route path="/admin/*" element={
-            <ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-      <Footer />
+      <Routes>
+        <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <HomePage />} />
+        <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <LoginPage />} />
+        <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
+        <Route path="/dashboard/*" element={
+          <ProtectedRoute><DashboardPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/*" element={
+          <ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {showFooter && <Footer />}
     </>
   );
 };
