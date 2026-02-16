@@ -107,8 +107,7 @@ function handleRegister(data) {
   }
 
   sheet.appendRow([
-    id, data.name, data.username, data.email, data.password, 'user', 
-    data.plan, credits, 'pending', data.contact, timestamp
+    data.plan, credits, 'pending', data.contact_number || data.contact, timestamp
   ]);
 
   // Log Transaction
@@ -462,9 +461,8 @@ function uploadToDrive(filename, base64Data, mimeType) {
     const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, filename);
     const file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    // Return direct download URL or view link (webContentLink/webViewLink)
-    // webViewLink is usually better for embedding or redirecting
-    return file.getDownloadUrl().replace('&export=download', ''); 
+    // Return direct image link format for <img> tags
+    return "https://drive.google.com/uc?export=view&id=" + file.getId(); 
   } catch (e) {
     return '';
   }
