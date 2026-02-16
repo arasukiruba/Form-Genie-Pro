@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_TASK",
+  "summary": "Setup guide for deploying the Google Apps Script backend. Instructions include creating a new Google Sheet, configuring columns, setting up the script project, enabling the specific Sheets API service if needed, and deploying as a Web App.",
+  "updatedAt": "2026-02-16T12:22:07.554582Z"
+}

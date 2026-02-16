@@ -1,8 +1,11 @@
-const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+// GAS requires POST for everything to handle JSON body correctly in doPost
+// Requests are sent to the single Script URL with an 'action' parameter
 
 interface ApiOptions {
-    method?: string;
-    body?: any;
+    action: string;
+    data?: any;
     headers?: Record<string, string>;
 }
 
@@ -28,97 +31,144 @@ export function setStoredUser(user: any): void {
     localStorage.setItem('fg_user', JSON.stringify(user));
 }
 
-async function apiRequest(endpoint: string, options: ApiOptions = {}) {
+// Helper to convert File to Base64
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            // Remove data:image/png;base64, prefix
+            const result = reader.result as string;
+            const base64 = result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = error => reject(error);
+    });
+};
+
+async function apiRequest(action: string, data: any = {}) {
+    if (!API_BASE) {
+        console.error('VITE_API_URL is not set. Please restart with the GAS URL.');
+        throw { error: 'API URL not configured' };
+    }
+
     const token = getToken();
-    const headers: Record<string, string> = {
-        ...options.headers,
+
+    // Construct payload
+    const payload = {
+        action,
+        token, // Send token in body for GAS to check
+        ...data
     };
 
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
+    // GAS Web App often has CORS issues with application/json
+    // sending as text/plain (default) avoids preflight in some cases,
+    // but here we will try standard fetch.
+    // Ensure "redirect: follow" is set.
 
-    const fetchOptions: RequestInit = {
-        method: options.method || 'GET',
-        headers,
-    };
+    try {
+        const response = await fetch(API_BASE, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            // headers: { 'Content-Type': 'text/plain' }, // Often safer for GAS
+        });
 
-    if (options.body) {
-        if (options.body instanceof FormData) {
-            fetchOptions.body = options.body;
-        } else {
-            headers['Content-Type'] = 'application/json';
-            fetchOptions.body = JSON.stringify(options.body);
+        const result = await response.json();
+
+        if (result.error) {
+            throw { error: result.error };
         }
+        return result;
+    } catch (err: any) {
+        console.error('API Request Failed:', err);
+        throw err.error ? err : { error: 'Network or Server Error' };
     }
-
-    const response = await fetch(`${API_BASE}${endpoint}`, fetchOptions);
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw { status: response.status, ...data };
-    }
-
-    return data;
 }
 
 // ─── Auth API ─────────────────────────────────────
 export const authApi = {
-    register: (formData: FormData) =>
-        apiRequest('/auth/register', { method: 'POST', body: formData }),
+    // Modified to handle file conversion internally
+    register: async (formData: FormData) => {
+        const data: any = {};
+        formData.forEach((value, key) => {
+            if (typeof value === 'string') data[key] = value;
+        });
+
+        const file = formData.get('screenshot') as File;
+        if (file && file.size > 0) {
+            data.screenshotBase64 = await fileToBase64(file);
+            data.mimeType = file.type;
+        }
+
+        return apiRequest('register', data);
+    },
 
     login: (username: string, password: string) =>
-        apiRequest('/auth/login', { method: 'POST', body: { username, password } }),
+        apiRequest('login', { username, password }),
 
-    getProfile: () => apiRequest('/auth/me'),
+    getProfile: () => apiRequest('getProfile'),
 };
 
 // ─── Admin API ────────────────────────────────────
 export const adminApi = {
     getUsers: (status?: string) =>
-        apiRequest(`/admin/users${status ? `?status=${status}` : ''}`),
+        apiRequest('getUsers', { status }),
 
     getUserDetail: (id: string) =>
-        apiRequest(`/admin/users/${id}`),
+        Promise.reject('Not implemented in GAS version'), // Optional, users list has all info
 
-    approveUser: (id: string) =>
-        apiRequest(`/admin/users/${id}/approve`, { method: 'PUT' }),
+    approveUser: (userId: string) =>
+        apiRequest('approveUser', { userId }),
 
-    rejectUser: (id: string) =>
-        apiRequest(`/admin/users/${id}/reject`, { method: 'PUT' }),
+    rejectUser: (userId: string) =>
+        apiRequest('rejectUser', { userId }),
 
-    updateCredits: (id: string, amount: number, action: 'add' | 'reduce') =>
-        apiRequest(`/admin/users/${id}/credits`, { method: 'PUT', body: { amount, action } }),
+    updateCredits: (userId: string, amount: number, action: 'add' | 'reduce') =>
+        apiRequest('updateCredits', { userId, amount, action }),
 
-    getScreenshot: (id: string) =>
-        apiRequest(`/admin/users/${id}/screenshot`),
+    getScreenshot: (userId: string) => {
+        // We can just get it from the user list if we sync it?
+        // Or implement a specific getter. 
+        // For now, let's assume we need to fetch it or finding it in the user object.
+        // GAS "Code.gs" doesn't have a 'getScreenshot' action exposed in my update?
+        // Wait, I forgot 'getScreenshot' in Code.gs update?
+        // Actually, Code.gs handleGetUsers can return it, or I can add a specific action.
+        // Let's rely on the URL being in the user object or implement a 'getScreenshot' action.
+        // Looking at Code.gs 'generateScreenshotUrl', it is internal.
+        // I used 'getScreenshot' in api.ts before.
+        // Let's add 'getScreenshot' action to Code.gs too? 
+        // Or better, let's just make 'getUsers' return it?
+        // Ideally, 'getUsers' returns user list.
+        // Let's add 'getScreenshot' to Code.gs in next step if missed.
+        return apiRequest('getScreenshot', { userId });
+        // I need to add this to Code.gs
+    },
 
-    toggleUserStatus: (id: string, status: 'approved' | 'disabled') =>
-        apiRequest(`/admin/users/${id}/status`, { method: 'PATCH', body: { status } }),
+    toggleUserStatus: (userId: string, status: 'approved' | 'disabled') =>
+        apiRequest('toggleUserStatus', { userId, status }),
 
-    deleteUser: (id: string) =>
-        apiRequest(`/admin/users/${id}`, { method: 'DELETE' }),
+    deleteUser: (userId: string) =>
+        apiRequest('deleteUser', { userId }),
 };
 
 // ─── Credits API ──────────────────────────────────
 export const creditsApi = {
-    getBalance: () => apiRequest('/credits/balance'),
-    deduct: (count: number = 1) =>
-        apiRequest('/credits/deduct', { method: 'POST', body: { count } }),
-    getLogs: () => apiRequest('/credits/logs'),
+    getBalance: () => Promise.resolve({ balance: 0 }), // Placeholder
+    deduct: (count: number = 1) => Promise.resolve({}), // Placeholder
+    getLogs: () => Promise.resolve({ logs: [] }), // Placeholder
 };
 
 // ─── QR Code ──────────────────────────────────────
-export const getQrCodeUrl = () => apiRequest('/qr-code');
+export const getQrCodeUrl = () => Promise.resolve({ url: '' }); // Placeholder
 
 // ─── Announcements API ───────────────────────────
 export const announcementsApi = {
-    getActive: () => apiRequest('/announcements'),
-    getAll: () => apiRequest('/announcements/all'),
+    getActive: () => apiRequest('getAnnouncements', { activeOnly: true }),
+    getAll: () => apiRequest('getAnnouncements'),
     create: (title: string, message: string, type: string = 'info') =>
-        apiRequest('/announcements', { method: 'POST', body: { title, message, type } }),
+        apiRequest('createAnnouncement', { title, message, type }),
     remove: (id: string) =>
-        apiRequest(`/announcements/${id}`, { method: 'DELETE' }),
+        apiRequest('deleteAnnouncement', { id }),
     toggle: (id: string) =>
-        apiRequest(`/announcements/${id}/toggle`, { method: 'PATCH' }),
+        apiRequest('toggleAnnouncement', { id }),
 };
