@@ -1,77 +1,36 @@
+# Deployment Guide (GitHub Pages)
 
-# 🚀 Deployment Guide — Form Genie Pro (Final)
+This project has been migrated to a serverless architecture using Google Apps Script (Backend) and GitHub Pages (Frontend).
 
-This guide outlines how to deploy **Form Genie Pro** using the standard stack:
-- **Frontend**: Vercel (Fast, Global CDN)
-- **Backend**: Render (Reliable Node.js hosting)
+## Prerequisites
+1.  **Node.js** installed.
+2.  **Google Apps Script** deployed (see `google_apps_script/Setup.md`).
 
-## 🔐 1. Secrets Management
+## 1. Setup
+Install dependencies:
+```bash
+npm install
+```
 
-**NEVER commit your `.env` file to GitHub.**
-The project is configured to ignore `.env` files. You will set secrets manually in the Vercel/Render dashboards.
+## 2. Environment Configuration
+Ensure you have a `.env` file at the root with your GAS Web App URL:
+```
+VITE_API_URL=https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
+```
 
----
+## 3. Deploy to GitHub Pages
+To deploy the frontend to GitHub Pages, run:
 
-## 🐙 2. GitHub Repository
+```bash
+npm run deploy
+```
 
-Your code is already pushed to: **[https://github.com/arasukiruba/Form-Genie-Pro](https://github.com/arasukiruba/Form-Genie-Pro)**.
+This command will:
+1.  Build the project (output to `dist`).
+2.  Push the `dist` folder to the `gh-pages` branch of your repository.
 
----
-
-## 🌐 3. Backend Deployment (Render)
-
-We will deploy the `server` folder to **Render**.
-
-1.  **Create Web Service** on [Render Dashboard](https://dashboard.render.com/):
-    - Connect your repo `Form-Genie-Pro`.
-    - **Name**: `form-genie-server`
-    - **Root Directory**: `server` (Important!)
-    - **Environment**: `Node`
-    - **Build Command**: `npm install && npm run build`
-    - **Start Command**: `npm start`
-    - **Env Vars**: Add **ALL** values from your `server/.env` file.
-      - `ENCRYPTION_KEY`, `SUPABASE_URL`, `JWT_SECRET`, etc.
-
-2.  **Copy URL**: Once live, copy the URL (e.g., `https://form-genie-server.onrender.com`).
-
----
-
-## 🎨 4. Frontend Deployment (Vercel)
-
-We will deploy the `client` folder to **Vercel**.
-
-1.  **Import Project** on [Vercel Dashboard](https://vercel.com/dashboard):
-    - Import `Form-Genie-Pro` from GitHub.
-
-2.  **Configure Project**:
-    - **Framework Preset**: `Vite`
-    - **Root Directory**: Click `Edit` and select `client`.
-
-3.  **Environment Variables**:
-    - Add the following variable:
-        - **Name**: `VITE_API_URL`
-        - **Value**: Your Render Backend URL (e.g., `https://form-genie-server.onrender.com`)
-          - *Note: Do not add a trailing slash `/`.*
-
-4.  **Deploy**: Click **Deploy**.
-
----
-
-## ✅ 5. Final Verification
-
-1.  Open your Vercel URL (e.g., `https://form-genie-pro.vercel.app`).
-2.  **Register a new user**: Verify email sends and user appears in DB.
-3.  **Login as Admin**: Verify admin dashboard loads.
-4.  **Test Automation**: Run a form automation to ensure credits deduct correctly.
-
----
-
-## 🛠 Troubleshooting
-
-- **Server fails to start?**
-  - Check Render logs. Ensure `ENCRYPTION_KEY` matches your local one.
-  - Ensure `package.json` in `server` has `"type": "module"`.
-
-- **Frontend API errors?**
-  - Check `VITE_API_URL` in Vercel settings.
-  - Ensure CORS is allowed on the server (it is configured to allow all origins by default in `index.ts`).
+## 4. GitHub Settings
+1.  Go to your GitHub Repository > **Settings** > **Pages**.
+2.  Ensure **Source** is set to `Deploy from a branch`.
+3.  Select **Branch**: `gh-pages` / `root`.
+4.  Your site will be live at `https://your-username.github.io/Form-Genie-Pro/`.
