@@ -8,7 +8,7 @@ import { parseFormHTML } from '../services/parserService';
 import { FormPreview } from '../components/FormPreview';
 import { Spinner } from '../components/Spinner';
 import { creditsApi } from '../services/api';
-import { Link2, FileCode2, AlertCircle, Sparkles, Zap, CreditCard, TrendingUp, Activity } from 'lucide-react';
+import { Link2, FileCode2, AlertCircle, Sparkles, Zap, CreditCard, TrendingUp, Activity, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Dashboard Overview ────────────────────────────
@@ -262,10 +262,29 @@ const AutomateForm: React.FC = () => {
 
 // ─── Dashboard Layout ──────────────────────────────
 export const DashboardPage: React.FC = () => {
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7fc', fontFamily: "'Inter', sans-serif" }}>
-            <Sidebar />
-            <main style={{ flex: 1, padding: '32px 40px', overflowY: 'auto', minHeight: '100vh' }}>
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8f7fc] font-['Inter']">
+            {/* Mobile Header */}
+            <div className="lg:hidden bg-white border-b border-[#e8e5f0] p-4 flex items-center justify-between sticky top-0 z-30">
+                <div className="flex items-center gap-3">
+                    <div style={{ background: 'linear-gradient(135deg, #4285F4, #5a9cf5)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Sparkles style={{ width: 16, height: 16, color: 'white' }} />
+                    </div>
+                    <h2 className="text-lg font-bold text-[#1e1b2e]">Form Genie</h2>
+                </div>
+                <button
+                    onClick={() => setIsMobileSidebarOpen(true)}
+                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100"
+                >
+                    <Menu size={20} />
+                </button>
+            </div>
+
+            <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
+
+            <main className="flex-1 p-6 lg:p-10 overflow-y-auto min-h-screen">
                 <Routes>
                     <Route index element={<DashboardOverview />} />
                     <Route path="automate" element={<AutomateForm />} />

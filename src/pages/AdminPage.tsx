@@ -6,7 +6,7 @@ import { Spinner } from '../components/Spinner';
 import {
     Users, CheckCircle, XCircle, Clock, Eye, Plus, Minus,
     Search, Filter, ChevronDown, AlertCircle, CreditCard,
-    Megaphone, Trash2, ToggleLeft, ToggleRight, Send
+    Megaphone, Trash2, ToggleLeft, ToggleRight, Send, Menu, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -569,6 +569,7 @@ const UserManagement: React.FC = () => {
 // ─── Admin Layout ──────────────────────────────────
 export const AdminPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'users' | 'announcements'>('users');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
     const tabStyle = (active: boolean): React.CSSProperties => ({
         padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
@@ -580,19 +581,36 @@ export const AdminPage: React.FC = () => {
     });
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f7fc', fontFamily: "'Inter', sans-serif" }}>
-            <Sidebar />
-            <main style={{ flex: 1, padding: '32px 40px', overflowY: 'auto' }}>
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8f7fc] font-['Inter']">
+            {/* Mobile Header */}
+            <div className="lg:hidden bg-white border-b border-[#e8e5f0] p-4 flex items-center justify-between sticky top-0 z-30">
+                <div className="flex items-center gap-3">
+                    <div style={{ background: 'linear-gradient(135deg, #4285F4, #5a9cf5)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Sparkles style={{ width: 16, height: 16, color: 'white' }} />
+                    </div>
+                    <h2 className="text-lg font-bold text-[#1e1b2e]">Form Genie</h2>
+                </div>
+                <button
+                    onClick={() => setIsMobileSidebarOpen(true)}
+                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100"
+                >
+                    <Menu size={20} />
+                </button>
+            </div>
+
+            <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
+
+            <main className="flex-1 p-6 lg:p-10 overflow-y-auto min-h-screen">
                 {/* Tab Switcher */}
                 <div style={{
                     display: 'inline-flex', background: '#f0eef5', borderRadius: '12px', padding: '4px',
-                    marginBottom: '24px', border: '1px solid #e8e5f0',
+                    marginBottom: '24px', border: '1px solid #e8e5f0', overflowX: 'auto', maxWidth: '100%'
                 }}>
                     <button onClick={() => setActiveTab('users')} style={tabStyle(activeTab === 'users')}>
-                        <Users style={{ width: 16, height: 16 }} /> User Management
+                        <Users style={{ width: 16, height: 16, flexShrink: 0 }} /> <span className="whitespace-nowrap">User Management</span>
                     </button>
                     <button onClick={() => setActiveTab('announcements')} style={tabStyle(activeTab === 'announcements')}>
-                        <Megaphone style={{ width: 16, height: 16 }} /> Announcements
+                        <Megaphone style={{ width: 16, height: 16, flexShrink: 0 }} /> <span className="whitespace-nowrap">Announcements</span>
                     </button>
                 </div>
 
