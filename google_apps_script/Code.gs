@@ -13,38 +13,50 @@ const SHEET_CREDIT_REQUESTS = 'CreditRequests';
 
 // ─── SETUP FUNCTION ─────────────────────────────────
 // Run this function ('setup') once from the editor to create sheets/headers!
+// Safe to re-run — it will create missing sheets and fix headers on existing ones.
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // Users Sheet
-  let usersSheet = ss.getSheetByName(SHEET_USERS);
-  if (!usersSheet) {
-    usersSheet = ss.insertSheet(SHEET_USERS);
-    usersSheet.appendRow(['id', 'name', 'username', 'email', 'password', 'role', 'plan', 'credits', 'status', 'contact', 'created_at']);
-    // Add default admin
-    usersSheet.appendRow(['1', 'Admin', 'admin', 'admin@example.com', 'admin123', 'admin', 'pro', 9999, 'approved', '', new Date().toISOString()]);
-  }
-  
-  // Transactions Sheet
-  let txSheet = ss.getSheetByName(SHEET_TRANSACTIONS);
-  if (!txSheet) {
-    txSheet = ss.insertSheet(SHEET_TRANSACTIONS);
-    txSheet.appendRow(['id', 'user_id', 'transaction_id', 'screenshot_url', 'status', 'amount', 'created_at']);
-  }
-  
-  // Announcements Sheet
-  let annSheet = ss.getSheetByName(SHEET_ANNOUNCEMENTS);
-  if (!annSheet) {
-    annSheet = ss.insertSheet(SHEET_ANNOUNCEMENTS);
-    annSheet.appendRow(['id', 'title', 'message', 'type', 'active', 'created_at']);
+
+  // Helper: ensure a sheet exists with the correct headers in row 1
+  function ensureSheet(name, headers) {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+    }
+    // Always set row 1 to the correct headers
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    return sheet;
   }
 
-  // Credit Requests Sheet
-  let crSheet = ss.getSheetByName(SHEET_CREDIT_REQUESTS);
-  if (!crSheet) {
-    crSheet = ss.insertSheet(SHEET_CREDIT_REQUESTS);
-    crSheet.appendRow(['id', 'user_id', 'user_name', 'user_email', 'plan', 'credits_requested', 'amount', 'transaction_id', 'screenshot_url', 'status', 'created_at']);
+  // ── Users Sheet ──
+  // Columns: id | name | username | email | password | role | plan | credits | status | contact | created_at
+  var usersSheet = ensureSheet(SHEET_USERS, [
+    'id', 'name', 'username', 'email', 'password', 'role', 'plan', 'credits', 'status', 'contact', 'created_at'
+  ]);
+  // Add default admin if sheet is empty (only headers)
+  if (usersSheet.getLastRow() <= 1) {
+    usersSheet.appendRow([
+      '1', 'Admin', 'admin', 'admin@example.com', 'admin123', 'admin', 'pro', 9999, 'approved', '', new Date().toISOString()
+    ]);
   }
+
+  // ── Transactions Sheet ──
+  // Columns: id | user_id | transaction_id | screenshot_url | status | amount | created_at
+  ensureSheet(SHEET_TRANSACTIONS, [
+    'id', 'user_id', 'transaction_id', 'screenshot_url', 'status', 'amount', 'created_at'
+  ]);
+
+  // ── Announcements Sheet ──
+  // Columns: id | title | message | type | active | created_at
+  ensureSheet(SHEET_ANNOUNCEMENTS, [
+    'id', 'title', 'message', 'type', 'active', 'created_at'
+  ]);
+
+  // ── Credit Requests Sheet ──
+  // Columns: id | user_id | user_name | user_email | plan | credits_requested | amount | transaction_id | screenshot_url | status | created_at
+  ensureSheet(SHEET_CREDIT_REQUESTS, [
+    'id', 'user_id', 'user_name', 'user_email', 'plan', 'credits_requested', 'amount', 'transaction_id', 'screenshot_url', 'status', 'created_at'
+  ]);
 }
 
 // ─── API ROUTER ─────────────────────────────────────
