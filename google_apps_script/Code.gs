@@ -124,9 +124,10 @@ function handleRegister(data) {
   ]);
 
   // Log Transaction
+  const txnId = data.transaction_id || data.transactionId || '';
   const txSheet = ss.getSheetByName(SHEET_TRANSACTIONS);
   txSheet.appendRow([
-    Utilities.getUuid(), id, data.transactionId, screenshotUrl, 'pending', 
+    Utilities.getUuid(), id, txnId, screenshotUrl, 'pending', 
     data.plan === 'starter' ? 100 : 180, timestamp
   ]);
 
@@ -140,7 +141,7 @@ function handleRegister(data) {
             <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Name</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">${data.name}</td></tr>
             <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Email</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">${data.email}</td></tr>
             <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Plan</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-transform: capitalize;">${data.plan}</td></tr>
-            <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Transaction ID</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-family: monospace;">${data.transactionId}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Transaction ID</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-family: monospace;">${txnId || 'N/A'}</td></tr>
           </table>
         </div>
         <p>Please check the Admin Panel to approve or reject this request.</p>
