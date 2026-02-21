@@ -463,7 +463,8 @@ function handleRequestCredits(data) {
 
   var requestId = Utilities.getUuid();
   var timestamp = new Date().toISOString();
-  crSheet.appendRow([requestId, userId, userName, userEmail, data.plan, creditsRequested, amount, data.transaction_id || '', screenshotUrl, 'pending', timestamp]);
+  var txnId = data.transaction_id || data.transactionId || '';
+  crSheet.appendRow([requestId, userId, userName, userEmail, data.plan, creditsRequested, amount, txnId, screenshotUrl, 'pending', timestamp]);
 
   // Email admin
   if (ADMIN_EMAIL && ADMIN_EMAIL !== 'PASTE_YOUR_ADMIN_EMAIL_HERE') {
@@ -475,7 +476,7 @@ function handleRequestCredits(data) {
         '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Email</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">' + userEmail + '</td></tr>' +
         '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Plan</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-transform: capitalize;">' + data.plan + ' (' + creditsRequested + ' credits)</td></tr>' +
         '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Amount</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">₹' + amount + '</td></tr>' +
-        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Transaction ID</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-family: monospace;">' + (data.transaction_id || 'N/A') + '</td></tr>' +
+        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Transaction ID</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-family: monospace;">' + (txnId || 'N/A') + '</td></tr>' +
         '</table></div>' +
         '<p>Please check the Admin Panel to approve or reject this request.</p>';
 
@@ -538,6 +539,7 @@ function handleApproveCreditRequest(data) {
           // Send confirmation email to user
           if (userEmail) {
             try {
+              var txnId = rows[i][7];
               var emailBody = '<p>Hi ' + userName + ',</p>' +
                 '<p>Great news! Your add-on credit request has been <strong>approved</strong>.</p>' +
                 '<div style="background: #ecfdf5; padding: 20px; border-radius: 12px; border: 1px solid #a7f3d0; margin: 20px 0; text-align: center;">' +
@@ -545,6 +547,7 @@ function handleApproveCreditRequest(data) {
                 '<p style="font-size: 36px; font-weight: 800; color: #059669; margin: 0;">+' + creditsToAdd + '</p>' +
                 '<p style="font-size: 14px; color: #065f46; margin: 8px 0 0;">New Balance: ' + newCredits + ' credits</p>' +
                 '</div>' +
+                (txnId ? '<p style="font-size: 13px; color: #64748b;">Transaction ID: <strong style="font-family: monospace;">' + txnId + '</strong></p>' : '') +
                 '<p>You can start using your credits right away. Happy automating!</p>';
 
               MailApp.sendEmail({
@@ -598,7 +601,7 @@ function getEmailTemplate(title, body, actionLink, actionText) {
         <!-- Header -->
         <tr>
           <td align="center" style="padding: 40px 0 30px 0; background: linear-gradient(135deg, #4285F4, #5a9cf5);">
-            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Form Genie Genie</h1>
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Form Genie</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">Smart Automation Platform</p>
           </td>
         </tr>
