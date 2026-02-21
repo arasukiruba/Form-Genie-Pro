@@ -180,3 +180,18 @@ export const announcementsApi = {
     toggle: (id: string) =>
         apiRequest('toggleAnnouncement', { id }),
 };
+
+// ─── Credit Requests API ─────────────────────────
+export const creditRequestsApi = {
+    submit: async (plan: string, transaction_id: string, screenshotFile?: File) => {
+        const data: any = { plan, transaction_id };
+        if (screenshotFile && screenshotFile.size > 0) {
+            data.screenshotBase64 = await fileToBase64(screenshotFile);
+            data.mimeType = screenshotFile.type;
+        }
+        return apiRequest('requestCredits', data);
+    },
+    getAll: () => apiRequest('getCreditRequests'),
+    approve: (requestId: string) => apiRequest('approveCreditRequest', { requestId }),
+    reject: (requestId: string) => apiRequest('rejectCreditRequest', { requestId }),
+};

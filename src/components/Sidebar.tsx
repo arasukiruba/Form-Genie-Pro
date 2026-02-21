@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { announcementsApi } from '../services/api';
-import { LayoutDashboard, Users, Zap, LogOut, Sparkles, CreditCard, Megaphone, AlertTriangle, CheckCircle, Info, AlertOctagon, X } from 'lucide-react';
+import { LayoutDashboard, Users, Zap, LogOut, Sparkles, CreditCard, Megaphone, AlertTriangle, CheckCircle, Info, AlertOctagon, X, Plus } from 'lucide-react';
+import { CreditRequestModal } from './CreditRequestModal';
 
 interface Announcement {
     id: string;
@@ -19,9 +20,10 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
-    const { user, logout } = useAuth();
+    const { user, logout, refreshCredits } = useAuth();
     const navigate = useNavigate();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [showCreditModal, setShowCreditModal] = useState(false);
 
     useEffect(() => {
         const fetchAnnouncements = async () => {
@@ -153,6 +155,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                         </div>
                         <div style={{ fontSize: '28px', fontWeight: 800, color: '#1e1b2e' }}>{user.role === 'admin' ? '∞' : user.credits.toLocaleString()}</div>
                         <div style={{ fontSize: '11px', color: '#6b6580', marginTop: '4px' }}>{user.role === 'admin' ? 'Unlimited (Admin)' : `${user.plan || 'N/A'} plan`}</div>
+                        {user.role !== 'admin' && (
+                            <button
+                                onClick={() => setShowCreditModal(true)}
+                                style={{
+                                    width: '100%', marginTop: '12px', padding: '8px 12px', borderRadius: '8px',
+                                    border: '1px solid #d4e3fc', background: 'white',
+                                    color: '#4285F4', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#4285F4'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
+                                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'white'; (e.currentTarget as HTMLElement).style.color = '#4285F4'; }}
+                            >
+                                <Plus style={{ width: 14, height: 14 }} />
+                                Request Credits
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -177,6 +196,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                     </button>
                 </div>
             </aside>
+
+            {/* Credit Request Modal */}
+            <CreditRequestModal
+                isOpen={showCreditModal}
+                onClose={() => setShowCreditModal(false)}
+                onSuccess={() => refreshCredits()}
+            />
         </>
     );
 };

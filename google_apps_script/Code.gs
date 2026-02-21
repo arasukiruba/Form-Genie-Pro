@@ -9,6 +9,7 @@ const ADMIN_EMAIL = 'arasukirubanandhan2430035@ssn.edu.in';
 const SHEET_USERS = 'Users';
 const SHEET_TRANSACTIONS = 'Transactions';
 const SHEET_ANNOUNCEMENTS = 'Announcements';
+const SHEET_CREDIT_REQUESTS = 'CreditRequests';
 
 // ─── SETUP FUNCTION ─────────────────────────────────
 // Run this function ('setup') once from the editor to create sheets/headers!
@@ -36,6 +37,13 @@ function setup() {
   if (!annSheet) {
     annSheet = ss.insertSheet(SHEET_ANNOUNCEMENTS);
     annSheet.appendRow(['id', 'title', 'message', 'type', 'active', 'created_at']);
+  }
+
+  // Credit Requests Sheet
+  let crSheet = ss.getSheetByName(SHEET_CREDIT_REQUESTS);
+  if (!crSheet) {
+    crSheet = ss.insertSheet(SHEET_CREDIT_REQUESTS);
+    crSheet.appendRow(['id', 'user_id', 'user_name', 'user_email', 'plan', 'credits_requested', 'amount', 'transaction_id', 'screenshot_url', 'status', 'created_at']);
   }
 }
 
@@ -67,6 +75,10 @@ function doPost(e) {
       case 'deleteAnnouncement': return handleDeleteAnnouncement(data);
       case 'getScreenshot': return handleGetScreenshot(data);
       case 'adminStats': return handleAdminStats(data);
+      case 'requestCredits': return handleRequestCredits(data);
+      case 'getCreditRequests': return handleGetCreditRequests(data);
+      case 'approveCreditRequest': return handleApproveCreditRequest(data);
+      case 'rejectCreditRequest': return handleRejectCreditRequest(data);
       default: return errorResponse('Invalid action');
     }
   } catch (error) {
@@ -397,6 +409,174 @@ function handleAdminStats(data) {
   }
   
   return successResponse({ totalUsers, pendingUsers, revenue: 0 });
+}
+
+// ─── CREDIT REQUEST HANDLERS ────────────────────────
+
+function handleRequestCredits(data) {
+  if (!data.token) return errorResponse('Not authenticated');
+
+  // Decode token to get username
+  var decoded, username;
+  try {
+    decoded = Utilities.newBlob(Utilities.base64Decode(data.token)).getDataAsString();
+    username = decoded.split(':')[0];
+  } catch (e) {
+    return errorResponse('Invalid token');
+  }
+
+  // Find user
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var uSheet = ss.getSheetByName(SHEET_USERS);
+  var uRows = uSheet.getDataRange().getValues();
+  var userId = '', userName = '', userEmail = '';
+
+  for (var i = 1; i < uRows.length; i++) {
+    if (uRows[i][2] === username) {
+      userId = uRows[i][0];
+      userName = uRows[i][1];
+      userEmail = uRows[i][3];
+      break;
+    }
+  }
+  if (!userId) return errorResponse('User not found');
+
+  // Determine credits and amount from plan
+  var creditsMap = { 'starter': 150, 'pro': 300, 'executive': 500 };
+  var amountMap = { 'starter': 100, 'pro': 180, 'executive': 300 };
+  var creditsRequested = creditsMap[data.plan] || 0;
+  var amount = amountMap[data.plan] || 0;
+  if (!creditsRequested) return errorResponse('Invalid plan selected');
+
+  // Upload screenshot
+  var screenshotUrl = '';
+  if (data.screenshotBase64) {
+    screenshotUrl = uploadToDrive(username + '_addon_' + Date.now(), data.screenshotBase64, data.mimeType);
+  }
+
+  // Save to CreditRequests sheet
+  var crSheet = ss.getSheetByName(SHEET_CREDIT_REQUESTS);
+  if (!crSheet) {
+    crSheet = ss.insertSheet(SHEET_CREDIT_REQUESTS);
+    crSheet.appendRow(['id', 'user_id', 'user_name', 'user_email', 'plan', 'credits_requested', 'amount', 'transaction_id', 'screenshot_url', 'status', 'created_at']);
+  }
+
+  var requestId = Utilities.getUuid();
+  var timestamp = new Date().toISOString();
+  crSheet.appendRow([requestId, userId, userName, userEmail, data.plan, creditsRequested, amount, data.transaction_id || '', screenshotUrl, 'pending', timestamp]);
+
+  // Email admin
+  if (ADMIN_EMAIL && ADMIN_EMAIL !== 'PASTE_YOUR_ADMIN_EMAIL_HERE') {
+    try {
+      var emailBody = '<p>A user has requested add-on credits.</p>' +
+        '<div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin: 20px 0;">' +
+        '<table style="width: 100%; border-collapse: collapse;">' +
+        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">User</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">' + userName + '</td></tr>' +
+        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Email</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">' + userEmail + '</td></tr>' +
+        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Plan</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; text-transform: capitalize;">' + data.plan + ' (' + creditsRequested + ' credits)</td></tr>' +
+        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Amount</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600;">₹' + amount + '</td></tr>' +
+        '<tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Transaction ID</td><td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-family: monospace;">' + (data.transaction_id || 'N/A') + '</td></tr>' +
+        '</table></div>' +
+        '<p>Please check the Admin Panel to approve or reject this request.</p>';
+
+      MailApp.sendEmail({
+        to: ADMIN_EMAIL,
+        subject: '💳 Add-on Credit Request: ' + userName + ' (' + creditsRequested + ' credits)',
+        htmlBody: getEmailTemplate('Add-on Credit Request', emailBody, screenshotUrl, 'View Payment Screenshot')
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  return successResponse({ message: 'Credit request submitted successfully! Awaiting admin approval.' });
+}
+
+function handleGetCreditRequests(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_CREDIT_REQUESTS);
+  if (!sheet) return successResponse({ requests: [] });
+
+  var rows = sheet.getDataRange().getValues();
+  var requests = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    requests.push({
+      id: r[0], user_id: r[1], user_name: r[2], user_email: r[3],
+      plan: r[4], credits_requested: r[5], amount: r[6],
+      transaction_id: r[7], screenshot_url: r[8], status: r[9], created_at: r[10]
+    });
+  }
+  return successResponse({ requests: requests.reverse() });
+}
+
+function handleApproveCreditRequest(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var crSheet = ss.getSheetByName(SHEET_CREDIT_REQUESTS);
+  if (!crSheet) return errorResponse('No credit requests found');
+
+  var rows = crSheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][0] === data.requestId) {
+      if (rows[i][9] === 'approved') return errorResponse('Already approved');
+
+      var userId = rows[i][1];
+      var userName = rows[i][2];
+      var userEmail = rows[i][3];
+      var creditsToAdd = rows[i][5];
+
+      // Update request status
+      crSheet.getRange(i + 1, 10).setValue('approved');
+
+      // Add credits to user
+      var uSheet = ss.getSheetByName(SHEET_USERS);
+      var uRows = uSheet.getDataRange().getValues();
+      for (var j = 1; j < uRows.length; j++) {
+        if (uRows[j][0] === userId) {
+          var currentCredits = uRows[j][7];
+          var newCredits = currentCredits + creditsToAdd;
+          uSheet.getRange(j + 1, 8).setValue(newCredits);
+
+          // Send confirmation email to user
+          if (userEmail) {
+            try {
+              var emailBody = '<p>Hi ' + userName + ',</p>' +
+                '<p>Great news! Your add-on credit request has been <strong>approved</strong>.</p>' +
+                '<div style="background: #ecfdf5; padding: 20px; border-radius: 12px; border: 1px solid #a7f3d0; margin: 20px 0; text-align: center;">' +
+                '<p style="font-size: 14px; color: #065f46; margin: 0 0 8px;">Credits Added</p>' +
+                '<p style="font-size: 36px; font-weight: 800; color: #059669; margin: 0;">+' + creditsToAdd + '</p>' +
+                '<p style="font-size: 14px; color: #065f46; margin: 8px 0 0;">New Balance: ' + newCredits + ' credits</p>' +
+                '</div>' +
+                '<p>You can start using your credits right away. Happy automating!</p>';
+
+              MailApp.sendEmail({
+                to: userEmail,
+                subject: '✅ Credits Added - Form Genie Pro (+' + creditsToAdd + ' credits)',
+                htmlBody: getEmailTemplate('Credits Added Successfully!', emailBody, 'https://arasukiruba.github.io/Form-Genie-Pro/', 'Go to Dashboard')
+              });
+            } catch (e) { /* ignore */ }
+          }
+
+          return successResponse({ message: 'Credit request approved. ' + creditsToAdd + ' credits added.', newCredits: newCredits });
+        }
+      }
+      return errorResponse('User not found for credit addition');
+    }
+  }
+  return errorResponse('Credit request not found');
+}
+
+function handleRejectCreditRequest(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var crSheet = ss.getSheetByName(SHEET_CREDIT_REQUESTS);
+  if (!crSheet) return errorResponse('No credit requests found');
+
+  var rows = crSheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][0] === data.requestId) {
+      crSheet.getRange(i + 1, 10).setValue('rejected');
+      return successResponse({ message: 'Credit request rejected' });
+    }
+  }
+  return errorResponse('Credit request not found');
 }
 
 // ─── UTILS ──────────────────────────────────────────

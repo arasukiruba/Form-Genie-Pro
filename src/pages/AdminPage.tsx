@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
-import { adminApi, announcementsApi } from '../services/api';
+import { adminApi, announcementsApi, creditRequestsApi } from '../services/api';
 import { Spinner } from '../components/Spinner';
 import {
     Users, CheckCircle, XCircle, Clock, Eye, Plus, Minus,
@@ -566,9 +566,247 @@ const UserManagement: React.FC = () => {
     );
 };
 
+// ─── Credit Requests Manager ───────────────────────
+interface CreditRequest {
+    id: string;
+    user_id: string;
+    user_name: string;
+    user_email: string;
+    plan: string;
+    credits_requested: number;
+    amount: number;
+    transaction_id: string;
+    screenshot_url: string;
+    status: string;
+    created_at: string;
+}
+
+const CreditRequestsManager: React.FC = () => {
+    const [requests, setRequests] = useState<CreditRequest[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+    const [processing, setProcessing] = useState<string | null>(null);
+    const [viewingScreenshot, setViewingScreenshot] = useState<string | null>(null);
+
+    const fetchRequests = async () => {
+        try {
+            const data = await creditRequestsApi.getAll();
+            setRequests(data.requests || []);
+        } catch {
+            // ignore
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchRequests(); }, []);
+
+    const handleApprove = async (requestId: string) => {
+        if (!confirm('Approve this credit request? Credits will be added to the user\'s balance.')) return;
+        setProcessing(requestId);
+        try {
+            await creditRequestsApi.approve(requestId);
+            await fetchRequests();
+        } catch (err: any) {
+            alert(err.error || 'Failed to approve');
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    const handleReject = async (requestId: string) => {
+        if (!confirm('Reject this credit request?')) return;
+        setProcessing(requestId);
+        try {
+            await creditRequestsApi.reject(requestId);
+            await fetchRequests();
+        } catch (err: any) {
+            alert(err.error || 'Failed to reject');
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    const filtered = requests.filter(r => filter === 'all' || r.status === filter);
+    const pendingCount = requests.filter(r => r.status === 'pending').length;
+
+    const statusStyle = (status: string): React.CSSProperties => {
+        switch (status) {
+            case 'approved': return { background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' };
+            case 'rejected': return { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' };
+            default: return { background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' };
+        }
+    };
+
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+            <Spinner />
+        </div>
+    );
+
+    return (
+        <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1e1b2e', margin: 0 }}>
+                    Credit Requests
+                    {pendingCount > 0 && (
+                        <span style={{
+                            marginLeft: '10px', fontSize: '12px', fontWeight: 700,
+                            background: '#fef3c7', color: '#92400e', padding: '3px 10px',
+                            borderRadius: '20px', verticalAlign: 'middle',
+                        }}>
+                            {pendingCount} pending
+                        </span>
+                    )}
+                </h2>
+
+                {/* Filter */}
+                <div style={{ display: 'flex', gap: '6px', background: '#f0eef5', borderRadius: '10px', padding: '3px' }}>
+                    {(['pending', 'approved', 'rejected', 'all'] as const).map(f => (
+                        <button key={f} onClick={() => setFilter(f)}
+                            style={{
+                                padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                fontSize: '12px', fontWeight: 600, transition: 'all 0.15s',
+                                textTransform: 'capitalize',
+                                background: filter === f ? '#fff' : 'transparent',
+                                color: filter === f ? '#4285F4' : '#9e97b0',
+                                boxShadow: filter === f ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                            }}
+                        >{f}</button>
+                    ))}
+                </div>
+            </div>
+
+            {filtered.length === 0 ? (
+                <div style={{
+                    textAlign: 'center', padding: '60px 20px', color: '#9e97b0',
+                    background: '#fafafa', borderRadius: '16px', border: '1px solid #e8e5f0',
+                }}>
+                    <CreditCard style={{ width: 40, height: 40, color: '#d4cfe0', margin: '0 auto 12px' }} />
+                    <p style={{ fontSize: '14px', fontWeight: 500, margin: 0 }}>No {filter !== 'all' ? filter : ''} credit requests</p>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {filtered.map(req => (
+                        <motion.div
+                            key={req.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            style={{
+                                background: '#fff', borderRadius: '14px', border: '1px solid #e8e5f0',
+                                padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                                <div>
+                                    <h4 style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 600, color: '#1e1b2e' }}>{req.user_name}</h4>
+                                    <p style={{ margin: 0, fontSize: '12px', color: '#9e97b0' }}>{req.user_email}</p>
+                                </div>
+                                <span style={{
+                                    fontSize: '11px', fontWeight: 700, padding: '4px 12px',
+                                    borderRadius: '20px', textTransform: 'capitalize',
+                                    ...statusStyle(req.status),
+                                }}>
+                                    {req.status}
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                                <div style={{ background: '#f8f7fc', padding: '10px 14px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#9e97b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Plan</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e1b2e', textTransform: 'capitalize', marginTop: '2px' }}>{req.plan}</div>
+                                </div>
+                                <div style={{ background: '#f0f4ff', padding: '10px 14px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#9e97b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Credits</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#4285F4', marginTop: '2px' }}>+{req.credits_requested}</div>
+                                </div>
+                                <div style={{ background: '#ecfdf5', padding: '10px 14px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#9e97b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#059669', marginTop: '2px' }}>₹{req.amount}</div>
+                                </div>
+                                {req.transaction_id && (
+                                    <div style={{ background: '#f8f7fc', padding: '10px 14px', borderRadius: '10px' }}>
+                                        <div style={{ fontSize: '10px', fontWeight: 600, color: '#9e97b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Txn ID</div>
+                                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#1e1b2e', fontFamily: 'monospace', marginTop: '2px' }}>{req.transaction_id}</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                {req.screenshot_url && (
+                                    <button onClick={() => setViewingScreenshot(req.screenshot_url)}
+                                        style={{
+                                            padding: '7px 14px', borderRadius: '8px', border: '1px solid #e8e5f0',
+                                            background: 'white', color: '#6b6580', fontSize: '12px', fontWeight: 600,
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                                        }}
+                                    >
+                                        <Eye style={{ width: 14, height: 14 }} /> Screenshot
+                                    </button>
+                                )}
+
+                                {req.status === 'pending' && (
+                                    <>
+                                        <button onClick={() => handleApprove(req.id)} disabled={processing === req.id}
+                                            style={{
+                                                padding: '7px 14px', borderRadius: '8px', border: 'none',
+                                                background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white',
+                                                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', gap: '6px', opacity: processing === req.id ? 0.6 : 1,
+                                            }}
+                                        >
+                                            <CheckCircle style={{ width: 14, height: 14 }} /> Approve
+                                        </button>
+                                        <button onClick={() => handleReject(req.id)} disabled={processing === req.id}
+                                            style={{
+                                                padding: '7px 14px', borderRadius: '8px', border: '1px solid #fecaca',
+                                                background: '#fef2f2', color: '#dc2626',
+                                                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', gap: '6px', opacity: processing === req.id ? 0.6 : 1,
+                                            }}
+                                        >
+                                            <XCircle style={{ width: 14, height: 14 }} /> Reject
+                                        </button>
+                                    </>
+                                )}
+
+                                <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#9e97b0' }}>
+                                    {new Date(req.created_at).toLocaleDateString()}
+                                </span>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
+            {/* Screenshot Modal */}
+            <AnimatePresence>
+                {viewingScreenshot && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        onClick={() => setViewingScreenshot(null)}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            zIndex: 1000, backdropFilter: 'blur(4px)', cursor: 'pointer',
+                        }}
+                    >
+                        <motion.img
+                            initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                            src={viewingScreenshot} alt="Payment Screenshot"
+                            style={{ maxWidth: '90%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 // ─── Admin Layout ──────────────────────────────────
 export const AdminPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'users' | 'announcements'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'announcements' | 'credits'>('users');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
     const tabStyle = (active: boolean): React.CSSProperties => ({
@@ -613,9 +851,12 @@ export const AdminPage: React.FC = () => {
                     <button onClick={() => setActiveTab('announcements')} style={tabStyle(activeTab === 'announcements')}>
                         <Megaphone style={{ width: 16, height: 16, flexShrink: 0 }} /> <span style={{ whiteSpace: 'nowrap' }}>Announcements</span>
                     </button>
+                    <button onClick={() => setActiveTab('credits')} style={tabStyle(activeTab === 'credits')}>
+                        <CreditCard style={{ width: 16, height: 16, flexShrink: 0 }} /> <span style={{ whiteSpace: 'nowrap' }}>Credit Requests</span>
+                    </button>
                 </div>
 
-                {activeTab === 'users' ? <UserManagement /> : <AnnouncementsManager />}
+                {activeTab === 'users' ? <UserManagement /> : activeTab === 'announcements' ? <AnnouncementsManager /> : <CreditRequestsManager />}
             </main>
         </div>
     );
