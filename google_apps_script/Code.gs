@@ -10,6 +10,7 @@ const SHEET_USERS = 'Users';
 const SHEET_TRANSACTIONS = 'Transactions';
 const SHEET_ANNOUNCEMENTS = 'Announcements';
 const SHEET_CREDIT_REQUESTS = 'CreditRequests';
+const SHEET_SETTINGS = 'Settings';
 
 // ─── SETUP FUNCTION ─────────────────────────────────
 // Run this function ('setup') once from the editor to create sheets/headers!
@@ -57,6 +58,10 @@ function setup() {
   ensureSheet(SHEET_CREDIT_REQUESTS, [
     'id', 'user_id', 'user_name', 'user_email', 'plan', 'credits_requested', 'amount', 'transaction_id', 'screenshot_url', 'status', 'created_at'
   ]);
+
+  // ── Settings Sheet ──
+  // Key-value store for app settings (e.g. guidelines PDF file ID)
+  ensureSheet(SHEET_SETTINGS, ['key', 'value']);
 }
 
 // ─── API ROUTER ─────────────────────────────────────
@@ -91,6 +96,8 @@ function doPost(e) {
       case 'getCreditRequests': return handleGetCreditRequests(data);
       case 'approveCreditRequest': return handleApproveCreditRequest(data);
       case 'rejectCreditRequest': return handleRejectCreditRequest(data);
+      case 'uploadGuidelines': return handleUploadGuidelines(data);
+      case 'getGuidelines': return handleGetGuidelines(data);
       default: return errorResponse('Invalid action');
     }
   } catch (error) {
@@ -593,6 +600,62 @@ function handleRejectCreditRequest(data) {
     }
   }
   return errorResponse('Credit request not found');
+}
+
+// ─── GUIDELINES HANDLERS ────────────────────────────
+
+function handleUploadGuidelines(data) {
+  if (!data.pdfBase64) return errorResponse('No PDF file provided');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var settingsSheet = ss.getSheetByName(SHEET_SETTINGS);
+  if (!settingsSheet) {
+    settingsSheet = ss.insertSheet(SHEET_SETTINGS);
+    settingsSheet.appendRow(['key', 'value']);
+  }
+
+  // Delete previous guidelines file from Drive if exists
+  var rows = settingsSheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'guidelines_file_id') {
+      try {
+        DriveApp.getFileById(rows[i][1]).setTrashed(true);
+      } catch (e) { /* file may already be deleted */ }
+      settingsSheet.deleteRow(i + 1);
+      break;
+    }
+  }
+
+  // Upload new PDF to Drive
+  try {
+    var folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    var blob = Utilities.newBlob(Utilities.base64Decode(data.pdfBase64), data.mimeType || 'application/pdf', 'Guidelines.pdf');
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var fileId = file.getId();
+
+    // Save file ID to Settings sheet
+    settingsSheet.appendRow(['guidelines_file_id', fileId]);
+
+    return successResponse({ message: 'Guidelines uploaded successfully', fileId: fileId });
+  } catch (e) {
+    return errorResponse('Failed to upload guidelines: ' + e.toString());
+  }
+}
+
+function handleGetGuidelines(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var settingsSheet = ss.getSheetByName(SHEET_SETTINGS);
+  if (!settingsSheet) return successResponse({ url: '' });
+
+  var rows = settingsSheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'guidelines_file_id') {
+      var fileId = rows[i][1];
+      return successResponse({ url: 'https://drive.google.com/file/d/' + fileId + '/preview' });
+    }
+  }
+  return successResponse({ url: '' });
 }
 
 // ─── UTILS ──────────────────────────────────────────

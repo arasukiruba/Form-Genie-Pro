@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,8 +7,8 @@ import { fetchUrlContent } from '../services/proxyService';
 import { parseFormHTML } from '../services/parserService';
 import { FormPreview } from '../components/FormPreview';
 import { Spinner } from '../components/Spinner';
-import { creditsApi } from '../services/api';
-import { Link2, FileCode2, AlertCircle, Sparkles, Zap, CreditCard, TrendingUp, Activity, Menu } from 'lucide-react';
+import { creditsApi, guidelinesApi } from '../services/api';
+import { Link2, FileCode2, AlertCircle, Sparkles, Zap, CreditCard, TrendingUp, Activity, Menu, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Dashboard Overview ────────────────────────────
@@ -104,6 +104,14 @@ const AutomateForm: React.FC = () => {
     const [inputType, setInputType] = useState<'url' | 'html'>('url');
     const [parsedForm, setParsedForm] = useState<ParsedForm | null>(null);
     const [status, setStatus] = useState<GenerationState>({ status: 'idle' });
+    const [guidelinesUrl, setGuidelinesUrl] = useState('');
+    const [guidelinesLoading, setGuidelinesLoading] = useState(true);
+
+    useEffect(() => {
+        guidelinesApi.get().then(data => {
+            setGuidelinesUrl(data.url || '');
+        }).catch(() => { }).finally(() => setGuidelinesLoading(false));
+    }, []);
 
     const handleImport = async () => {
         if (inputType === 'url' && !url) return;
@@ -253,6 +261,48 @@ const AutomateForm: React.FC = () => {
                                 <><Sparkles style={{ width: 16, height: 16 }} /> Import Form</>
                             )}
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Guidelines PDF Section */}
+            <div style={{ marginTop: '28px' }}>
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px',
+                }}>
+                    <FileText style={{ width: 20, height: 20, color: '#4285F4' }} />
+                    <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1e1b2e', margin: 0 }}>
+                        📖 Guidelines
+                    </h2>
+                </div>
+
+                <div style={{
+                    background: '#fff', borderRadius: '16px', border: '1px solid #e8e5f0',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden',
+                }}>
+                    <div style={{ height: '3px', background: 'linear-gradient(90deg, #10b981, #34d399, #10b981)' }} />
+                    <div style={{ padding: '24px' }}>
+                        {guidelinesLoading ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 0' }}>
+                                <Spinner size="h-6 w-6" />
+                            </div>
+                        ) : guidelinesUrl ? (
+                            <iframe
+                                src={guidelinesUrl}
+                                style={{
+                                    width: '100%', height: '700px', border: '1px solid #e8e5f0',
+                                    borderRadius: '10px', background: '#f8f7fc',
+                                }}
+                                title="Guidelines PDF"
+                                allow="autoplay"
+                            />
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '40px 0', color: '#9e97b0' }}>
+                                <FileText style={{ width: 36, height: 36, margin: '0 auto 10px', opacity: 0.4 }} />
+                                <p style={{ fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>No guidelines available</p>
+                                <p style={{ fontSize: '12px', color: '#b8b3c8', margin: 0 }}>The admin has not uploaded any guidelines yet.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -195,3 +195,12 @@ export const creditRequestsApi = {
     approve: (requestId: string) => apiRequest('approveCreditRequest', { requestId }),
     reject: (requestId: string) => apiRequest('rejectCreditRequest', { requestId }),
 };
+
+// ─── Guidelines API ──────────────────────────────
+export const guidelinesApi = {
+    upload: async (file: File) => {
+        const pdfBase64 = await fileToBase64(file);
+        return apiRequest('uploadGuidelines', { pdfBase64, mimeType: file.type });
+    },
+    get: () => apiRequest('getGuidelines'),
+};
