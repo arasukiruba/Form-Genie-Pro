@@ -509,15 +509,16 @@ const UserManagement: React.FC = () => {
             <AnimatePresence>
                 {selectedUser && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}
+                        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', backdropFilter: 'blur(4px)' }}
                         onClick={() => { setSelectedUser(null); setScreenshotUrl(''); }}>
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-                            style={{ background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}
+                            style={{ background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '85vh', overflow: 'auto' }}
                             onClick={(e) => e.stopPropagation()}>
                             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e1b2e', marginBottom: '4px' }}>Payment Screenshot</h3>
                             <p style={{ color: '#6b6580', fontSize: '13px', marginBottom: '16px' }}>{selectedUser.name} — {selectedUser.email}</p>
                             {screenshotUrl ? (
-                                <img src={screenshotUrl} alt="Payment Screenshot" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e8e5f0' }} />
+                                <img src={screenshotUrl} alt="Payment Screenshot" referrerPolicy="no-referrer"
+                                    style={{ width: '100%', borderRadius: '10px', border: '1px solid #e8e5f0', display: 'block' }} />
                             ) : (
                                 <p style={{ color: '#9e97b0', textAlign: 'center', padding: '40px 0' }}>No screenshot available</p>
                             )}
@@ -793,7 +794,7 @@ const CreditRequestsManager: React.FC = () => {
                     >
                         <motion.img
                             initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-                            src={viewingScreenshot} alt="Payment Screenshot"
+                            src={viewingScreenshot} alt="Payment Screenshot" referrerPolicy="no-referrer"
                             style={{ maxWidth: '90%', maxHeight: '80vh', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
                             onClick={(e) => e.stopPropagation()}
                         />
