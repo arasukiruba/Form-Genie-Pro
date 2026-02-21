@@ -581,18 +581,19 @@ export const AdminPage: React.FC = () => {
     });
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8f7fc] font-['Inter']">
+        <div className="layout-shell">
             {/* Mobile Header */}
-            <div className="lg:hidden bg-white border-b border-[#e8e5f0] p-4 flex items-center justify-between sticky top-0 z-30">
-                <div className="flex items-center gap-3">
+            <div className="mobile-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ background: 'linear-gradient(135deg, #4285F4, #5a9cf5)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Sparkles style={{ width: 16, height: 16, color: 'white' }} />
                     </div>
-                    <h2 className="text-lg font-bold text-[#1e1b2e]">Form Genie</h2>
+                    <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1e1b2e', margin: 0 }}>Form Genie</h2>
                 </div>
                 <button
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100"
+                    className="sidebar-close-btn"
+                    style={{ display: 'block', border: '1px solid #f3f4f6' }}
                 >
                     <Menu size={20} />
                 </button>
@@ -600,17 +601,17 @@ export const AdminPage: React.FC = () => {
 
             <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
 
-            <main className="flex-1 p-6 lg:p-10 overflow-y-auto min-h-screen">
+            <main className="layout-main" style={{ minHeight: '100vh' }}>
                 {/* Tab Switcher */}
                 <div style={{
                     display: 'inline-flex', background: '#f0eef5', borderRadius: '12px', padding: '4px',
                     marginBottom: '24px', border: '1px solid #e8e5f0', overflowX: 'auto', maxWidth: '100%'
                 }}>
                     <button onClick={() => setActiveTab('users')} style={tabStyle(activeTab === 'users')}>
-                        <Users style={{ width: 16, height: 16, flexShrink: 0 }} /> <span className="whitespace-nowrap">User Management</span>
+                        <Users style={{ width: 16, height: 16, flexShrink: 0 }} /> <span style={{ whiteSpace: 'nowrap' }}>User Management</span>
                     </button>
                     <button onClick={() => setActiveTab('announcements')} style={tabStyle(activeTab === 'announcements')}>
-                        <Megaphone style={{ width: 16, height: 16, flexShrink: 0 }} /> <span className="whitespace-nowrap">Announcements</span>
+                        <Megaphone style={{ width: 16, height: 16, flexShrink: 0 }} /> <span style={{ whiteSpace: 'nowrap' }}>Announcements</span>
                     </button>
                 </div>
 

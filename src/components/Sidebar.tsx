@@ -42,11 +42,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         navigate('/');
     };
 
-    const linkClasses = (isActive: boolean) =>
-        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-            ? 'bg-gradient-to-r from-[#4285F4]/10 to-[#5a9cf5]/10 text-[#4285F4] shadow-sm'
-            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-        }`;
+    const linkStyle = (isActive: boolean): React.CSSProperties => ({
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '10px 16px',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: 500,
+        transition: 'all 0.2s',
+        textDecoration: 'none',
+        background: isActive ? 'linear-gradient(to right, rgba(66,133,244,0.1), rgba(90,156,245,0.1))' : 'transparent',
+        color: isActive ? '#4285F4' : '#6b7280',
+        boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+    });
 
     const typeConfig: Record<string, { bg: string; border: string; icon: React.ReactNode; color: string }> = {
         info: { bg: '#eff6ff', border: '#bfdbfe', icon: <Info style={{ width: 14, height: 14, color: '#3b82f6' }} />, color: '#1e40af' },
@@ -60,17 +69,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             {/* Mobile Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/20 z-40 lg:hidden backdrop-blur-sm"
+                    className="sidebar-backdrop"
                     onClick={onClose}
                 />
             )}
 
             <aside
-                className={`
-                    fixed lg:sticky top-0 left-0 h-full w-[260px] bg-white border-r border-[#e8e5f0]
-                    flex flex-col p-6 font-['Inter'] overflow-y-auto shrink-0 z-50 transition-transform duration-300 ease-in-out
-                    ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                `}
+                className={`sidebar-panel ${isOpen ? 'open' : ''}`}
             >
                 {/* Logo */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
@@ -86,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                     {/* Mobile Close Button */}
                     <button
                         onClick={onClose}
-                        className="lg:hidden p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="sidebar-close-btn"
                     >
                         <X size={20} />
                     </button>
@@ -94,16 +99,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
                 {/* Navigation */}
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
-                    <NavLink to="/dashboard" onClick={onClose} className={({ isActive }) => linkClasses(isActive)} end>
+                    <NavLink to="/dashboard" onClick={onClose} style={({ isActive }) => linkStyle(isActive)} end>
                         <LayoutDashboard style={{ width: 18, height: 18 }} />
                         Dashboard
                     </NavLink>
-                    <NavLink to="/dashboard/automate" onClick={onClose} className={({ isActive }) => linkClasses(isActive)}>
+                    <NavLink to="/dashboard/automate" onClick={onClose} style={({ isActive }) => linkStyle(isActive)}>
                         <Zap style={{ width: 18, height: 18 }} />
                         Automate Form
                     </NavLink>
                     {user?.role === 'admin' && (
-                        <NavLink to="/admin" onClick={onClose} className={({ isActive }) => linkClasses(isActive)}>
+                        <NavLink to="/admin" onClick={onClose} style={({ isActive }) => linkStyle(isActive)}>
                             <Users style={{ width: 18, height: 18 }} />
                             User Management
                         </NavLink>

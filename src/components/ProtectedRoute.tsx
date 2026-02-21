@@ -13,8 +13,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminO
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#f8f7fc]">
-                <Spinner size="h-8 w-8" />
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f7fc' }}>
+                <Spinner />
             </div>
         );
     }

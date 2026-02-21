@@ -24,7 +24,6 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  // Ref to track if we should abort the loop immediately
   const stopRequested = useRef(false);
   const logCounter = useRef(0);
 
@@ -37,13 +36,11 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Re-creates the payload generation logic to ensure latest answers are used
   const generateFormData = () => {
     const formData = new URLSearchParams();
     form.items.forEach(item => {
       const answer = answers[item.id];
       if (answer === undefined || answer === null || answer === '') return;
-
       if (item.type === QuestionType.MULTIPLE_CHOICE_GRID || item.type === QuestionType.CHECKBOX_GRID) {
         if (item.rows) {
           const gridAnswers = answer as Record<string, string | string[]>;
@@ -76,13 +73,11 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
       alert("Error: Cannot submit. Form action URL missing.");
       return;
     }
-
     setIsSubmitting(true);
     stopRequested.current = false;
     setLogs([]);
     setProgress(0);
     logCounter.current = 0;
-
     addLog('info', "Starting automated submission sequence...");
     await delay(800);
     let successCount = 0;
@@ -100,31 +95,22 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
     };
 
     for (let i = 1; i <= targetCount; i++) {
-      // Check stop signal before starting iteration
       if (stopRequested.current) {
         setLogs(prev => [{ id: i, status: 'stopped', message: "Stopped by user", time: new Date().toLocaleTimeString() }, ...prev]);
         break;
       }
-
       try {
         const body = generateFormData();
-
-        // Submit to Google Forms
         await fetch(form.actionUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: body
         });
-
-        // Small artificial delay to confirm submission transit
         await delay(500);
-
         addLog('success', `Submission #${i} finalized successfully`);
         successCount++;
         pendingDeductions++;
-
-        // Deduct every 5 successes
         if (pendingDeductions === 5) {
           await performDeduction(5);
           pendingDeductions = 0;
@@ -132,21 +118,15 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
       } catch (error) {
         addLog('error', `Submission #${i} failed: Network error`);
       }
-
       setProgress(i);
-
-      // Delay logic: Wait 2 seconds before next iteration, unless it's the last one or stopped
       if (i < targetCount && !stopRequested.current) {
         await delay(2000);
       }
     }
-
-    // Deduct remaining successes
     if (pendingDeductions > 0) {
       await performDeduction(pendingDeductions);
     }
-
-    await delay(500); // Final buffer
+    await delay(500);
     setIsSubmitting(false);
   };
 
@@ -155,20 +135,20 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-purple-200 shadow-sm mt-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center">
-          <Activity className="w-5 h-5 mr-2 text-purple-600" />
+    <div className="as-container">
+      <div className="as-header">
+        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center' }}>
+          <Activity style={{ width: 20, height: 20, marginRight: '8px', color: '#7c3aed' }} />
           Automated Submission
         </h3>
-        <div className="text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-100">
+        <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#5b21b6', background: '#faf5ff', padding: '4px 8px', borderRadius: '4px', border: '1px solid #ede9fe' }}>
           Interval: 2.0s
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-end mb-6">
-        <div className="flex-1 w-full">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+      <div className="as-form-row">
+        <div style={{ flex: 1, width: '100%' }}>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
             Total Submissions
           </label>
           <input
@@ -178,24 +158,18 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
             value={targetCount}
             onChange={(e) => setTargetCount(parseInt(e.target.value) || 1)}
             disabled={isSubmitting}
-            className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-medium"
+            className="as-input"
           />
         </div>
-        <div className="flex-none">
+        <div style={{ flexShrink: 0 }}>
           {!isSubmitting ? (
-            <button
-              onClick={handleStart}
-              className="flex items-center justify-center bg-purple-700 hover:bg-purple-800 text-white px-6 py-2.5 rounded-md shadow-md transition-all font-bold min-w-[140px]"
-            >
-              <Play className="w-4 h-4 mr-2" fill="currentColor" />
+            <button onClick={handleStart} className="as-btn-start">
+              <Play style={{ width: 16, height: 16, marginRight: '8px' }} fill="currentColor" />
               START
             </button>
           ) : (
-            <button
-              onClick={handleStop}
-              className="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-md shadow-md transition-all font-bold min-w-[140px]"
-            >
-              <Square className="w-4 h-4 mr-2" fill="currentColor" />
+            <button onClick={handleStop} className="as-btn-stop">
+              <Square style={{ width: 16, height: 16, marginRight: '8px' }} fill="currentColor" />
               STOP
             </button>
           )}
@@ -204,39 +178,39 @@ export const AutomatedSubmitter: React.FC<AutomatedSubmitterProps> = ({ form, an
 
       {/* Progress Bar */}
       {isSubmitting && (
-        <div className="w-full bg-gray-100 rounded-full h-2 mb-6 overflow-hidden">
+        <div className="as-progress-track">
           <div
-            className="bg-purple-600 h-2 rounded-full transition-all duration-300 ease-out"
+            className="as-progress-fill"
             style={{ width: `${(progress / targetCount) * 100}%` }}
           />
         </div>
       )}
 
       {/* Logs */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-4 py-2 bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider flex justify-between">
+      <div className="as-log-container">
+        <div className="as-log-header">
           <span>Activity Log</span>
-          {logs.length > 0 && <span className="text-gray-400 font-normal">{logs.length} entries</span>}
+          {logs.length > 0 && <span style={{ fontWeight: 400, color: '#9ca3af' }}>{logs.length} entries</span>}
         </div>
-        <div className="max-h-60 overflow-y-auto p-0 scroll-smooth">
+        <div className="as-log-body">
           {logs.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm py-8 italic">
+            <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '14px', padding: '2rem', fontStyle: 'italic' }}>
               Waiting to start...
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div>
               {logs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between px-4 py-2 text-sm hover:bg-white transition-colors">
-                  <div className="flex items-center">
-                    <span className="font-mono text-gray-400 w-10 text-xs">#{log.id}</span>
-                    {log.status === 'success' && <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />}
-                    {log.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />}
-                    {log.status === 'stopped' && <Square className="w-3 h-3 text-red-400 mr-2 flex-shrink-0" />}
-                    <span className={`font-medium ${log.status === 'success' ? 'text-gray-700' : 'text-red-600'}`}>
+                <div key={log.id} className="as-log-entry" style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'monospace', color: '#9ca3af', width: '40px', fontSize: '12px' }}>#{log.id}</span>
+                    {log.status === 'success' && <CheckCircle style={{ width: 16, height: 16, color: '#22c55e', marginRight: '8px', flexShrink: 0 }} />}
+                    {log.status === 'error' && <AlertCircle style={{ width: 16, height: 16, color: '#ef4444', marginRight: '8px', flexShrink: 0 }} />}
+                    {log.status === 'stopped' && <Square style={{ width: 12, height: 12, color: '#f87171', marginRight: '8px', flexShrink: 0 }} />}
+                    <span style={{ fontWeight: 500, color: log.status === 'success' ? '#374151' : '#dc2626' }}>
                       {log.message}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400 font-mono ml-4">
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: 'monospace', marginLeft: '1rem' }}>
                     {log.time}
                   </span>
                 </div>

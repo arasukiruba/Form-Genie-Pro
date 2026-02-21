@@ -73,16 +73,16 @@ const SpringSlider: React.FC<{
     setIsDragging(false);
   }, []);
 
-  const getValueColor = (val: number) => {
-    if (val >= 70) return isIndependent ? 'text-blue-600 bg-blue-50' : 'text-[#4285F4] bg-blue-50';
-    if (val >= 30) return isIndependent ? 'text-blue-500 bg-blue-50/50' : 'text-[#4285F4]/80 bg-blue-50/50';
-    return 'text-black/40 bg-gray-50';
+  const getValueStyle = (val: number): React.CSSProperties => {
+    if (val >= 70) return { color: isIndependent ? '#2563eb' : '#4285F4', background: '#eff6ff' };
+    if (val >= 30) return { color: isIndependent ? '#3b82f6' : 'rgba(66,133,244,0.8)', background: 'rgba(239,246,255,0.5)' };
+    return { color: 'rgba(0,0,0,0.4)', background: '#f9fafb' };
   };
 
   return (
-    <div className="flex items-center gap-3 mb-3 group py-0.5">
-      <div className="w-[35%] text-sm text-black font-medium truncate" title={label}>{label}</div>
-      <div className="flex-1 relative">
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', padding: '2px 0' }}>
+      <div style={{ width: '35%', fontSize: '14px', color: '#000', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={label}>{label}</div>
+      <div style={{ flex: 1, position: 'relative' }}>
         {/* Track */}
         <div
           ref={trackRef}
@@ -123,7 +123,7 @@ const SpringSlider: React.FC<{
       </div>
       {/* Value badge */}
       <motion.div
-        className={`w-14 text-center text-xs font-bold px-2 py-1 rounded-full ${getValueColor(value)}`}
+        style={{ width: '56px', textAlign: 'center', fontSize: '12px', fontWeight: 700, padding: '4px 8px', borderRadius: '9999px', ...getValueStyle(value) }}
         animate={{ scale: isDragging ? 1.08 : 1 }}
         transition={{ type: 'spring', stiffness: 500, damping: 25 }}
       >
@@ -184,7 +184,7 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
       case QuestionType.MULTIPLE_CHOICE:
       case QuestionType.DROPDOWN:
         return (
-          <div className="pt-2">
+          <div style={{ paddingTop: '8px' }}>
             {item.options?.map((opt, idx) => {
               const key = opt.id || opt.label;
               return (
@@ -202,9 +202,9 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
 
       case QuestionType.CHECKBOXES:
         return (
-          <div className="pt-2">
-            <div className="text-xs text-gray-400 mb-3 flex items-center italic">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2"></span>
+          <div style={{ paddingTop: '8px' }}>
+            <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px', display: 'flex', alignItems: 'center', fontStyle: 'italic' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#60a5fa', marginRight: '8px', flexShrink: 0 }}></span>
               Independent probabilities — each option selected independently
             </div>
             {item.options?.map((opt, idx) => {
@@ -228,7 +228,7 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
         const end = item.scaleEnd || 5;
         const range = Array.from({ length: end - start + 1 }, (_, i) => start + i);
         return (
-          <div className="pt-2">
+          <div style={{ paddingTop: '8px' }}>
             {range.map((val, idx) => (
               <SpringSlider
                 key={val}
@@ -246,7 +246,7 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
       case QuestionType.CHECKBOX_GRID: {
         const isCheckboxGrid = item.type === QuestionType.CHECKBOX_GRID;
         return (
-          <div className="space-y-5 pt-2">
+          <div className="space-y-5" style={{ paddingTop: '8px' }}>
             {item.rows?.map((row, rIdx) => {
               const rowKey = row.id || row.label;
               const rowWeights = weights[rowKey] || {};
@@ -254,8 +254,8 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
                 onWeightChange({ ...weights, [rowKey]: newRowWeights });
               };
               return (
-                <div key={rIdx} className="border-l-2 border-blue-200 pl-4">
-                  <div className="text-sm font-semibold text-black mb-2">{row.label}</div>
+                <div key={rIdx} style={{ borderLeft: '2px solid #bfdbfe', paddingLeft: '16px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#000', marginBottom: '8px' }}>{row.label}</div>
                   {item.columns?.map((col, cIdx) => {
                     const colKey = col.label;
                     const val = rowWeights[colKey] || 0;
@@ -281,20 +281,21 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
       }
 
       default:
-        return <div className="text-gray-400 text-sm italic">Weighted automation not supported for this type.</div>;
+        return <div style={{ color: '#9ca3af', fontSize: '14px', fontStyle: 'italic' }}>Weighted automation not supported for this type.</div>;
     }
   };
 
   return (
     <motion.div
-      className="card card-lift p-6 mb-4"
+      className="card card-lift"
+      style={{ padding: '1.5rem', marginBottom: '1rem' }}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="text-[15px] text-black font-semibold leading-tight">{item.title}</h4>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[#4285F4] bg-blue-50 px-2.5 py-1 rounded-full whitespace-nowrap ml-3">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <h4 style={{ fontSize: '15px', color: '#000', fontWeight: 600, lineHeight: 1.3, margin: 0 }}>{item.title}</h4>
+        <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4285F4', background: '#eff6ff', padding: '4px 10px', borderRadius: '9999px', whiteSpace: 'nowrap', marginLeft: '12px' }}>
           {questionTypeLabel(item.type)}
         </span>
       </div>
@@ -305,13 +306,13 @@ export const WeightedQuestionRenderer: React.FC<WeightedQuestionRendererProps> =
           {showGenderToggle && (
             <motion.div
               key={`gender-toggle-${item.id}`}
-              className="flex justify-end mb-4"
+              style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}
               initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
               exit={{ opacity: 0, scale: 1.3, filter: 'blur(12px)', transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }}
             >
-              <label className="flex items-center cursor-pointer select-none text-xs text-black/50 hover:text-black transition-colors gap-3">
-                <span className="uppercase font-bold tracking-wide">Gender?</span>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', userSelect: 'none', fontSize: '12px', color: 'rgba(0,0,0,0.5)', gap: '12px', transition: 'color 0.15s' }}>
+                <span style={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Gender?</span>
                 <IOSToggle
                   checked={specialMode === 'GENDER'}
                   onChange={(checked) => onToggleSpecialMode(checked ? 'GENDER' : undefined)}
